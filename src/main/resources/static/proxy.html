@@ -249,6 +249,11 @@
             <button id="switchCamera" class="button secondary hidden">切换摄像头</button>
             <button id="retryConnection" class="button secondary">重新连接</button>
         </div>
+        
+        <!-- 调试信息区域 -->
+        <div id="debugInfo" class="status hidden" style="margin-top: 20px; font-size: 12px;">
+            <div class="status-text" id="debugText"></div>
+        </div>
     </div>
 
     <script src="https://unpkg.com/jsqr@1.4.0/dist/jsQR.js"></script>
@@ -277,15 +282,43 @@
             }
 
             init() {
+                console.log('QRScanner initializing...');
                 this.setupEventListeners();
-                this.checkRoomParameter();
-                this.checkCameraSupport();
+                
+                // 检查room参数但不立即禁用按钮
+                const hasRoom = this.checkRoomParameter();
+                const hasCamera = this.checkCameraSupport();
+                
+                console.log('Room parameter:', hasRoom);
+                console.log('Camera support:', hasCamera);
+                
+                // 只有在两种检查都失败时才禁用按钮
+                if (!hasRoom && !hasCamera) {
+                    this.requestPermissionBtn.disabled = true;
+                }
             }
 
             setupEventListeners() {
-                this.requestPermissionBtn.addEventListener('click', () => this.requestCameraPermission());
-                this.switchCameraBtn.addEventListener('click', () => this.switchCamera());
-                this.retryConnectionBtn.addEventListener('click', () => this.connectWebSocket());
+                console.log('Setting up event listeners...');
+                
+                if (this.requestPermissionBtn) {
+                    this.requestPermissionBtn.addEventListener('click', () => {
+                        console.log('Request permission button clicked');
+                        this.requestCameraPermission();
+                    });
+                } else {
+                    console.error('Request permission button not found');
+                }
+                
+                if (this.switchCameraBtn) {
+                    this.switchCameraBtn.addEventListener('click', () => this.switchCamera());
+                }
+                
+                if (this.retryConnectionBtn) {
+                    this.retryConnectionBtn.addEventListener('click', () => this.connectWebSocket());
+                }
+                
+                console.log('Event listeners setup complete');
             }
 
             checkRoomParameter() {
@@ -302,14 +335,21 @@
             checkCameraSupport() {
                 if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
                     this.showError("您的浏览器不支持摄像头访问。请使用现代浏览器如Chrome、Firefox、Safari等。");
-                    this.requestPermissionBtn.disabled = true;
                     return false;
                 }
                 return true;
             }
 
             async requestCameraPermission() {
-                if (!this.checkCameraSupport()) return;
+                // 检查room参数
+                if (!this.checkRoomParameter()) {
+                    return;
+                }
+                
+                // 检查摄像头支持
+                if (!this.checkCameraSupport()) {
+                    return;
+                }
                 
                 this.requestPermissionBtn.innerHTML = '<span class="loading"></span> 正在请求权限...';
                 this.requestPermissionBtn.disabled = true;
@@ -527,6 +567,40 @@
         window.addEventListener('beforeunload', () => {
             scanner.destroy();
         });
+
+        // 添加调试功能
+        function showDebugInfo() {
+            const debugInfo = document.getElementById('debugInfo');
+            const debugText = document.getElementById('debugText');
+            
+            if (debugInfo && debugText) {
+                const info = [
+                    `浏览器: ${navigator.userAgent}`,
+                    `HTTPS: ${location.protocol === 'https:'}`,
+                    `Room参数: ${new URLSearchParams(window.location.search).get('room') || '未设置'}`,
+                    `摄像头支持: ${navigator.mediaDevices && navigator.mediaDevices.getUserMedia ? '是' : '否'}`,
+                    `按钮状态: ${document.getElementById('requestPermission') ? '找到' : '未找到'}`
+                ].join('\n');
+                
+                debugText.textContent = info;
+                debugInfo.classList.remove('hidden');
+            }
+        }
+
+        // 添加调试按钮（仅在开发环境显示）
+        if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+            const debugBtn = document.createElement('button');
+            debugBtn.textContent = '显示调试信息';
+            debugBtn.className = 'button secondary';
+            debugBtn.style.fontSize = '12px';
+            debugBtn.style.padding = '8px 16px';
+            debugBtn.onclick = showDebugInfo;
+            
+            const buttonGroup = document.querySelector('.button-group');
+            if (buttonGroup) {
+                buttonGroup.appendChild(debugBtn);
+            }
+        }
     </script>
 </body>
 </html> 
