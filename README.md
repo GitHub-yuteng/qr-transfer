@@ -49,13 +49,13 @@ mvn spring-boot:run
 
 ### 2. 代理操作
 
-1. 访问 http://localhost:8080/proxy.html?room=聊天室代码
+1. 访问 http://localhost:8080/proxy.html
 2. 允许浏览器访问摄像头
 3. 使用摄像头扫描二维码，系统会自动传输
 
 ### 3. 客户端操作
 
-1. 访问 http://localhost:8080/customer.html?room=聊天室代码
+1. 访问 http://localhost:8080/customer.html
 2. 等待代理扫描二维码
 3. 实时接收并显示扫描到的二维码信息
 

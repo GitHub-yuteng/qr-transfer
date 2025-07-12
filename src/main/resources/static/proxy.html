@@ -433,6 +433,18 @@
         <div id="permissionRequest" class="permission-request">
             <h3>需要摄像头权限</h3>
             <p>为了扫描二维码，我们需要访问您的摄像头。请点击下方按钮授权。</p>
+            
+            <!-- 移动设备提示 -->
+            <div id="mobileTips" class="status warning hidden" style="margin: 15px 0; text-align: left;">
+                <div class="status-text">
+                    <strong>移动设备使用提示：</strong><br>
+                    • 确保在安全环境下访问（HTTPS或本地网络）<br>
+                    • 首次使用需要允许摄像头权限<br>
+                    • 如果权限被拒绝，请在浏览器设置中重新授权<br>
+                    • 建议使用Chrome、Safari或Firefox浏览器
+                </div>
+            </div>
+            
             <button id="requestPermission" class="button">启用摄像头</button>
         </div>
 
@@ -551,6 +563,14 @@
                 if (hasRoom && this.roomCodeInput) {
                     this.roomCodeInput.value = this.room;
                     this.roomInputSection.classList.add('hidden');
+                }
+                
+                // 在移动设备上显示提示
+                if (this.isMobile) {
+                    const mobileTips = document.getElementById('mobileTips');
+                    if (mobileTips) {
+                        mobileTips.classList.remove('hidden');
+                    }
                 }
                 
                 // 只有在两种检查都失败时才禁用按钮
@@ -688,14 +708,36 @@
                 
                 // 移动设备特殊检查
                 if (this.isMobile) {
-                    // 检查是否在HTTPS环境下（localhost除外）
-                    if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
-                        this.showError("移动设备访问摄像头需要HTTPS环境。请使用HTTPS或确保在本地开发环境中访问。");
+                    // 检查是否在安全环境下（HTTPS或本地IP地址）
+                    const isLocalIP = this.isLocalIPAddress(location.hostname);
+                    const isLocalhost = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+                    const isHTTPS = location.protocol === 'https:';
+                    
+                    if (!isHTTPS && !isLocalhost && !isLocalIP) {
+                        this.showError("移动设备访问摄像头需要安全环境。\n\n解决方案：\n1. 使用HTTPS访问此页面\n2. 或使用localhost访问\n3. 或确保在本地网络环境中访问");
                         return false;
                     }
                 }
                 
                 return true;
+            }
+
+            // 新增：检查是否为本地IP地址
+            isLocalIPAddress(hostname) {
+                // 检查是否为私有IP地址范围
+                const localIPPatterns = [
+                    /^10\./,           // 10.0.0.0/8
+                    /^172\.(1[6-9]|2[0-9]|3[0-1])\./, // 172.16.0.0/12
+                    /^192\.168\./,     // 192.168.0.0/16
+                    /^169\.254\./,     // 169.254.0.0/16 (链路本地地址)
+                    /^127\./,          // 127.0.0.0/8 (回环地址)
+                    /^::1$/,           // IPv6 回环地址
+                    /^fe80:/,          // IPv6 链路本地地址
+                    /^fc00:/,          // IPv6 唯一本地地址
+                    /^fd00:/           // IPv6 唯一本地地址
+                ];
+                
+                return localIPPatterns.some(pattern => pattern.test(hostname));
             }
 
             async requestCameraPermission() {
@@ -716,6 +758,8 @@
                 this.requestPermissionBtn.disabled = true;
 
                 try {
+                    // 先尝试获取摄像头权限
+                    await this.requestCameraAccess();
                     await this.startCamera();
                     this.permissionRequest.classList.add('hidden');
                     this.cameraSection.classList.remove('hidden');
@@ -728,6 +772,22 @@
                     }
                 } catch (error) {
                     this.handleCameraError(error);
+                }
+            }
+
+            // 新增：专门请求摄像头访问权限
+            async requestCameraAccess() {
+                try {
+                    // 先尝试获取摄像头权限，不设置视频流
+                    const stream = await navigator.mediaDevices.getUserMedia({ 
+                        video: true, 
+                        audio: false 
+                    });
+                    // 立即停止流，只是为了获取权限
+                    stream.getTracks().forEach(track => track.stop());
+                    return true;
+                } catch (error) {
+                    throw error;
                 }
             }
 
@@ -793,7 +853,7 @@
                 
                 if (error.name === 'NotAllowedError') {
                     if (this.isMobile) {
-                        errorMessage = '摄像头权限被拒绝。\n\n解决方案：\n1. 点击浏览器地址栏左侧的锁定图标\n2. 允许摄像头访问\n3. 刷新页面重试\n\n或者：\n- 在浏览器设置中允许此网站的摄像头权限';
+                        errorMessage = '摄像头权限被拒绝。\n\n解决方案：\n1. 点击浏览器地址栏左侧的锁定图标\n2. 允许摄像头访问\n3. 刷新页面重试\n\n或者：\n- 在浏览器设置中允许此网站的摄像头权限\n- 确保在安全环境下访问（HTTPS或本地网络）';
                     } else {
                         errorMessage = '摄像头权限被拒绝。请在浏览器设置中允许摄像头访问，然后刷新页面。';
                     }
@@ -811,13 +871,17 @@
                     showRetry = false;
                 } else if (error.name === 'SecurityError') {
                     if (this.isMobile) {
-                        errorMessage = '安全错误：移动设备访问摄像头需要HTTPS环境。\n\n解决方案：\n1. 使用HTTPS访问此页面\n2. 或在本地开发环境中使用localhost访问';
+                        errorMessage = '安全错误：移动设备访问摄像头需要安全环境。\n\n解决方案：\n1. 使用HTTPS访问此页面\n2. 或使用localhost访问\n3. 或确保在本地网络环境中访问（如192.168.x.x）\n4. 检查浏览器安全设置';
                     } else {
                         errorMessage = '安全错误：摄像头访问被阻止。请检查浏览器安全设置。';
                     }
                     showRetry = false;
+                } else if (error.name === 'AbortError') {
+                    errorMessage = '摄像头访问被用户取消。请重新尝试。';
+                } else if (error.name === 'NotReadableError') {
+                    errorMessage = '摄像头被其他应用程序占用。请关闭其他使用摄像头的应用后重试。';
                 } else {
-                    errorMessage = `摄像头错误: ${error.message || error.name}`;
+                    errorMessage = `摄像头错误: ${error.message || error.name}\n\n请检查：\n1. 摄像头是否被其他应用占用\n2. 浏览器权限设置\n3. 设备摄像头是否正常工作`;
                 }
                 
                 this.showError(errorMessage);
@@ -1239,19 +1303,31 @@
             const debugText = document.getElementById('debugText');
             
             if (debugInfo && debugText) {
+                const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                const isLocalIP = scanner.isLocalIPAddress ? scanner.isLocalIPAddress(location.hostname) : false;
+                const isLocalhost = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+                const isHTTPS = location.protocol === 'https:';
+                
                 const info = [
                     `浏览器: ${navigator.userAgent}`,
                     `协议: ${location.protocol}`,
                     `主机: ${location.hostname}:${location.port}`,
-                    `HTTPS: ${location.protocol === 'https:'}`,
+                    `完整URL: ${location.href}`,
+                    `HTTPS: ${isHTTPS}`,
+                    `本地主机: ${isLocalhost}`,
+                    `本地IP: ${isLocalIP}`,
+                    `移动设备: ${isMobile}`,
+                    `安全环境: ${isHTTPS || isLocalhost || isLocalIP}`,
                     `Room参数: ${new URLSearchParams(window.location.search).get('room') || '未设置'}`,
                     `摄像头支持: ${navigator.mediaDevices && navigator.mediaDevices.getUserMedia ? '是' : '否'}`,
                     `按钮状态: ${document.getElementById('requestPermission') ? '找到' : '未找到'}`,
-                    `移动设备: ${/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ? '是' : '否'}`,
                     `getUserMedia支持: ${navigator.mediaDevices?.getUserMedia ? '是' : '否'}`,
                     `enumerateDevices支持: ${navigator.mediaDevices?.enumerateDevices ? '是' : '否'}`,
                     `当前时间: ${new Date().toLocaleString()}`,
-                    `页面URL: ${location.href}`
+                    `页面URL: ${location.href}`,
+                    `屏幕分辨率: ${screen.width}x${screen.height}`,
+                    `视口大小: ${window.innerWidth}x${window.innerHeight}`,
+                    `设备像素比: ${window.devicePixelRatio || '未知'}`
                 ].join('\n');
                 
                 debugText.textContent = info;
@@ -1286,8 +1362,63 @@
             }
         }
 
+        // 新增：测试摄像头权限
+        async function testCameraPermission() {
+            const debugInfo = document.getElementById('debugInfo');
+            const debugText = document.getElementById('debugText');
+            
+            if (!debugInfo || !debugText) return;
+            
+            try {
+                debugText.textContent = '正在测试摄像头权限...';
+                debugInfo.classList.remove('hidden');
+                
+                // 尝试获取摄像头权限
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: true, 
+                    audio: false 
+                });
+                
+                // 获取视频轨道信息
+                const videoTrack = stream.getVideoTracks()[0];
+                const capabilities = videoTrack.getCapabilities();
+                const settings = videoTrack.getSettings();
+                
+                const testResult = [
+                    '✓ 摄像头权限测试成功',
+                    `设备名称: ${videoTrack.label || '未命名'}`,
+                    `设备ID: ${videoTrack.id}`,
+                    `分辨率: ${settings.width}x${settings.height}`,
+                    `帧率: ${settings.frameRate || '未知'}fps`,
+                    `支持的分辨率: ${capabilities.width ? `${capabilities.width.min}-${capabilities.width.max}` : '未知'}`,
+                    `支持的帧率: ${capabilities.frameRate ? `${capabilities.frameRate.min}-${capabilities.frameRate.max}` : '未知'}`
+                ].join('\n');
+                
+                debugText.textContent = testResult;
+                
+                // 停止测试流
+                stream.getTracks().forEach(track => track.stop());
+                
+            } catch (error) {
+                const errorResult = [
+                    '✗ 摄像头权限测试失败',
+                    `错误类型: ${error.name}`,
+                    `错误信息: ${error.message}`,
+                    '',
+                    '可能的原因：',
+                    '1. 摄像头权限被拒绝',
+                    '2. 摄像头被其他应用占用',
+                    '3. 设备没有摄像头',
+                    '4. 浏览器不支持摄像头访问',
+                    '5. 安全环境问题（移动设备需要HTTPS或本地网络）'
+                ].join('\n');
+                
+                debugText.textContent = errorResult;
+            }
+        }
+
         // 添加调试按钮（仅在开发环境显示）
-        if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+        if (location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.hostname.match(/^192\.168\./) || location.hostname.match(/^10\./) || location.hostname.match(/^172\.(1[6-9]|2[0-9]|3[0-1])\./)) {
             const debugBtn = document.createElement('button');
             debugBtn.textContent = '显示调试信息';
             debugBtn.className = 'button secondary';
@@ -1302,10 +1433,18 @@
             cameraBtn.style.padding = '8px 16px';
             cameraBtn.onclick = checkCameraDevices;
             
+            const testBtn = document.createElement('button');
+            testBtn.textContent = '测试摄像头权限';
+            testBtn.className = 'button secondary';
+            testBtn.style.fontSize = '12px';
+            testBtn.style.padding = '8px 16px';
+            testBtn.onclick = testCameraPermission;
+            
             const buttonGroup = document.querySelector('.button-group');
             if (buttonGroup) {
                 buttonGroup.appendChild(debugBtn);
                 buttonGroup.appendChild(cameraBtn);
+                buttonGroup.appendChild(testBtn);
             }
         }
     </script>
