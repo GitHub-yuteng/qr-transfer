@@ -1194,7 +1194,7 @@
                 this.connectionStartTime = Date.now();
                 this.reconnectAttempts = 0;
                 
-                // 动态获取WebSocket URL，支持本地开发和生产环境
+                // 动态获取WebSocket URL
                 const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
                 const host = location.hostname === 'localhost' || location.hostname === '127.0.0.1' 
                     ? 'localhost:8080' 
@@ -1204,18 +1204,40 @@
                 console.log('Connecting to WebSocket:', wsUrl);
                 
                 try {
+                    // 先检查是否已有连接
+                    if (this.websocket) {
+                        console.log('Closing existing WebSocket connection');
+                        this.websocket.close();
+                        this.websocket = null;
+                    }
+                    
                     this.websocket = new WebSocket(wsUrl);
                     this.updateConnectionStatus('正在连接到聊天室...', 'status');
                     this.updateConnectionState('connecting');
                     
+                    // 设置连接超时
+                    const connectionTimeout = setTimeout(() => {
+                        if (this.websocket && this.websocket.readyState === WebSocket.CONNECTING) {
+                            console.warn('WebSocket connection timeout');
+                            this.websocket.close();
+                            this.updateConnectionStatus('连接超时，请重试', 'error');
+                            this.updateConnectionState('disconnected');
+                        }
+                    }, 10000); // 10秒连接超时
+                    
                     this.websocket.onopen = () => {
+                        clearTimeout(connectionTimeout);
                         console.log('WebSocket connected successfully');
                         this.connectionStartTime = Date.now();
+                        this.lastHeartbeatTime = Date.now();
                         this.reconnectAttempts = 0;
                         this.updateConnectionStatus('聊天室连接成功', 'success');
                         this.updateConnectionState('connected');
                         this.startHeartbeat();
                         this.startConnectionMonitoring();
+                        
+                        // 立即发送一次心跳以确认连接
+                        this.websocket.send('ping');
                         
                         // 恢复连接按钮状态
                         if (this.connectRoomBtn) {
@@ -1274,11 +1296,26 @@
                     
                     this.websocket.onmessage = (event) => {
                         console.log('Received message:', event.data);
-                        this.lastHeartbeatTime = Date.now();
                         
                         // 处理心跳响应
                         if (event.data === 'pong') {
+                            this.lastHeartbeatTime = Date.now();
                             this.updateLatency();
+                            // 确保连接状态为已连接
+                            this.updateConnectionState('connected');
+                            return;
+                        }
+                        
+                        // 其他消息的处理
+                        try {
+                            // 尝试解析消息
+                            const message = JSON.parse(event.data);
+                            if (message.type === 'status') {
+                                this.updateConnectionStatus(message.content, message.status);
+                            }
+                        } catch (e) {
+                            // 如果不是JSON，按普通消息处理
+                            console.log('Received non-JSON message:', event.data);
                         }
                     };
                     
@@ -1314,18 +1351,28 @@
                     clearInterval(this.heartbeatInterval);
                 }
                 
+                // 初始化最后心跳时间
+                this.lastHeartbeatTime = Date.now();
+                
                 this.heartbeatInterval = setInterval(() => {
                     if (this.websocket && this.websocket.readyState === WebSocket.OPEN) {
-                        const heartbeatTime = Date.now();
+                        console.log('Sending heartbeat ping');
                         this.websocket.send('ping');
                         
                         // 检查心跳超时
-                        setTimeout(() => {
-                            if (this.lastHeartbeatTime && (Date.now() - this.lastHeartbeatTime) > this.heartbeatTimeout) {
-                                console.warn('Heartbeat timeout detected');
-                                this.updateConnectionStatus('心跳超时，连接可能不稳定', 'warning');
+                        if (this.lastHeartbeatTime && (Date.now() - this.lastHeartbeatTime) > this.heartbeatTimeout) {
+                            console.warn('Heartbeat timeout detected');
+                            this.updateConnectionStatus('心跳超时，连接可能不稳定', 'warning');
+                            this.updateConnectionState('connecting');
+                            
+                            // 尝试重新建立连接
+                            if (this.reconnectAttempts < this.maxReconnectAttempts) {
+                                this.connectWebSocket();
                             }
-                        }, this.heartbeatTimeout);
+                        }
+                    } else {
+                        console.warn('WebSocket not open during heartbeat');
+                        this.updateConnectionState('disconnected');
                     }
                 }, 5000); // 每5秒发送一次心跳
             }
@@ -1364,6 +1411,14 @@
                 
                 if (!qualityFill || !qualityText) return;
                 
+                // 检查WebSocket连接状态
+                if (!this.websocket || this.websocket.readyState !== WebSocket.OPEN) {
+                    qualityFill.style.width = '0%';
+                    qualityFill.className = 'quality-fill poor';
+                    qualityText.textContent = '未连接';
+                    return;
+                }
+                
                 // 基于心跳延迟和连接稳定性计算质量
                 let quality = 100;
                 let qualityClass = 'good';
@@ -1371,7 +1426,13 @@
                 
                 if (this.lastHeartbeatTime) {
                     const latency = Date.now() - this.lastHeartbeatTime;
-                    if (latency > 1000) {
+                    console.log('Current latency:', latency); // 添加延迟日志
+                    
+                    if (latency > this.heartbeatTimeout) {
+                        quality = 0;
+                        qualityClass = 'poor';
+                        qualityLabel = '断开';
+                    } else if (latency > 1000) {
                         quality = 30;
                         qualityClass = 'poor';
                         qualityLabel = '差';
@@ -1382,16 +1443,15 @@
                     }
                 }
                 
-                // 检查WebSocket状态
-                if (this.websocket && this.websocket.readyState !== WebSocket.OPEN) {
-                    quality = 0;
-                    qualityClass = 'poor';
-                    qualityLabel = '断开';
-                }
-                
                 qualityFill.style.width = `${quality}%`;
                 qualityFill.className = `quality-fill ${qualityClass}`;
                 qualityText.textContent = qualityLabel;
+                
+                // 更新连接状态点
+                const connectionDot = document.querySelector('.connection-dot');
+                if (connectionDot) {
+                    connectionDot.className = `connection-dot ${quality > 0 ? 'connected' : 'disconnected'}`;
+                }
             }
 
             updateLatency() {
@@ -1403,6 +1463,7 @@
             }
 
             updateConnectionState(state) {
+                console.log('Updating connection state:', state); // 添加日志
                 const connectionDot = document.querySelector('.connection-dot');
                 const connectionState = document.getElementById('connectionState');
                 
@@ -1418,6 +1479,9 @@
                     };
                     connectionState.textContent = stateTexts[state] || state;
                 }
+                
+                // 更新连接质量显示
+                this.updateConnectionQuality();
             }
 
             resetConnectionStats() {
