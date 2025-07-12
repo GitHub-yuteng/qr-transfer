@@ -457,13 +457,21 @@
         }
 
         function displayRoomList(rooms) {
-            if (!rooms || rooms.length === 0) {
+            if (!rooms || (Array.isArray(rooms) && rooms.length === 0)) {
+                roomListElement.style.display = 'none';
+                return;
+            }
+
+            // 确保rooms是数组格式
+            const roomArray = Array.isArray(rooms) ? rooms : Array.from(rooms);
+            
+            if (roomArray.length === 0) {
                 roomListElement.style.display = 'none';
                 return;
             }
 
             roomItemsElement.innerHTML = '';
-            rooms.forEach(room => {
+            roomArray.forEach(room => {
                 const roomItem = document.createElement('div');
                 roomItem.className = 'room-item';
                 roomItem.innerHTML = `
@@ -555,10 +563,20 @@
 
         document.getElementById('query_room').addEventListener('click', async function () {
             try {
-                const data = await makeRequest('/chatroom/query');
-                appendMessage(`查询聊天室成功: ${JSON.stringify(data, null, 2)}`, 'success');
-                displayRoomList(data);
-                showNotification('查询聊天室成功！', 'success');
+                const response = await makeRequest('/chatroom/query');
+                appendMessage(`查询聊天室成功: ${JSON.stringify(response, null, 2)}`, 'success');
+                
+                // 检查响应结构并提取聊天室列表
+                if (response && response.success && response.data) {
+                    displayRoomList(response.data);
+                    showNotification(`查询成功！共找到 ${response.count || 0} 个聊天室`, 'success');
+                } else if (response && response.success) {
+                    displayRoomList([]);
+                    showNotification('查询成功！暂无聊天室', 'info');
+                } else {
+                    appendMessage(`查询失败: ${response.message || '未知错误'}`, 'error');
+                    showNotification('查询失败！', 'error');
+                }
             } catch (error) {
                 appendMessage(`查询聊天室失败: ${error.message}`, 'error');
                 showNotification('查询聊天室失败！', 'error');
