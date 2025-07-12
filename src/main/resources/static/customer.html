@@ -127,30 +127,63 @@
             font-size: 1.5em;
         }
 
-        .qr-code-display {
+        .qr-code-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .qr-code-image {
+            background: white;
+            border: 2px solid #dee2e6;
+            border-radius: 10px;
+            padding: 20px;
+            min-height: 200px;
+            min-width: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .qr-code-image.has-data {
+            border-color: #28a745;
+            box-shadow: 0 5px 15px rgba(40,167,69,0.2);
+        }
+
+        .qr-code-image.empty {
+            color: #6c757d;
+            font-style: italic;
+            border-style: dashed;
+        }
+
+        .qr-code-text {
             background: #f8f9fa;
             border: 2px dashed #dee2e6;
             border-radius: 10px;
-            padding: 20px;
-            margin: 20px 0;
-            min-height: 100px;
+            padding: 15px;
+            margin: 10px 0;
+            min-height: 60px;
             display: flex;
             align-items: center;
             justify-content: center;
             font-family: 'Courier New', monospace;
-            font-size: 14px;
+            font-size: 12px;
             word-break: break-all;
-            line-height: 1.5;
+            line-height: 1.4;
             transition: all 0.3s ease;
+            max-width: 100%;
+            overflow-wrap: break-word;
         }
 
-        .qr-code-display.has-data {
+        .qr-code-text.has-data {
             border-color: #28a745;
             background: #d4edda;
             color: #155724;
         }
 
-        .qr-code-display.empty {
+        .qr-code-text.empty {
             color: #6c757d;
             font-style: italic;
         }
@@ -275,6 +308,30 @@
             color: #74c0fc;
         }
 
+        .qr-stats {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+            padding: 15px;
+            background: #e9ecef;
+            border-radius: 10px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #007bff;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            color: #6c757d;
+        }
+
         @media (max-width: 768px) {
             .main-container {
                 margin: 10px;
@@ -302,6 +359,16 @@
                 width: 100%;
                 max-width: 300px;
             }
+
+            .qr-code-image {
+                min-width: 150px;
+                min-height: 150px;
+            }
+
+            .qr-stats {
+                flex-direction: column;
+                gap: 10px;
+            }
         }
     </style>
 </head>
@@ -327,8 +394,29 @@
             <!-- 二维码显示区域 -->
             <div class="qr-section">
                 <h3>🔍 扫描到的二维码信息</h3>
-                <div id="qrCodeDisplay" class="qr-code-display empty">
-                    等待扫描二维码...
+                
+                <!-- 统计信息 -->
+                <div class="qr-stats">
+                    <div class="stat-item">
+                        <div class="stat-number" id="totalReceived">0</div>
+                        <div class="stat-label">总接收数</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="lastUpdate">--</div>
+                        <div class="stat-label">最后更新</div>
+                    </div>
+                </div>
+
+                <div class="qr-code-container">
+                    <!-- 二维码图像显示 -->
+                    <div id="qrCodeImage" class="qr-code-image empty">
+                        <span>等待扫描二维码...</span>
+                    </div>
+                    
+                    <!-- 二维码文本显示 -->
+                    <div id="qrCodeText" class="qr-code-text empty">
+                        等待扫描二维码...
+                    </div>
                 </div>
             </div>
 
@@ -347,6 +435,9 @@
         </div>
     </div>
 
+    <!-- 引入二维码生成库 -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    
     <script>
         class QRReceiver {
             constructor() {
@@ -355,8 +446,9 @@
                 this.isConnected = false;
                 this.reconnectAttempts = 0;
                 this.maxReconnectAttempts = 5;
-                this.isManualReconnect = false; // 添加手动重连标志
-                this.autoReconnectEnabled = true; // 添加自动重连开关
+                this.isManualReconnect = false;
+                this.autoReconnectEnabled = true;
+                this.totalReceived = 0; // 添加接收计数器
                 
                 this.initializeElements();
                 this.bindEvents();
@@ -379,11 +471,14 @@
                 this.statusDot = document.getElementById('statusDot');
                 this.statusText = document.getElementById('statusText');
                 this.roomId = document.getElementById('roomId');
-                this.qrCodeDisplay = document.getElementById('qrCodeDisplay');
+                this.qrCodeImage = document.getElementById('qrCodeImage');
+                this.qrCodeText = document.getElementById('qrCodeText');
                 this.debugLog = document.getElementById('debugLog');
                 this.connectBtn = document.getElementById('connectBtn');
                 this.reconnectBtn = document.getElementById('reconnectBtn');
                 this.clearLogBtn = document.getElementById('clearLogBtn');
+                this.totalReceivedElement = document.getElementById('totalReceived');
+                this.lastUpdateElement = document.getElementById('lastUpdate');
             }
 
             bindEvents() {
@@ -463,12 +558,10 @@
 
                 this.websocket.onmessage = (event) => {
                     const data = event.data;
-                    this.logMessage(`收到数据: ${data}`, 'info');
-                    
-                    if (data.startsWith("https://www.kiwa")) {
+                    this.logMessage(`收到WebSocket消息: ${data}`, 'info');
+                    this.logMessage('收到二维码数据，准备显示...', 'info');
                         this.displayQRCode(data);
                         this.logMessage('二维码数据已更新', 'success');
-                    }
                 };
             }
 
@@ -498,9 +591,39 @@
                 this.connect();
             }
 
-            displayQRCode(data) {
-                this.qrCodeDisplay.textContent = data;
-                this.qrCodeDisplay.className = 'qr-code-display has-data';
+            async displayQRCode(data) {
+                try {
+                    // 更新文本显示
+                    this.qrCodeText.textContent = data;
+                    this.qrCodeText.className = 'qr-code-text has-data';
+                    
+                    // 生成二维码图像
+                    const qrCodeDataURL = await QRCode.toDataURL(data, {
+                        width: 200,
+                        height: 200,
+                        margin: 2,
+                        color: {
+                            dark: '#000000',
+                            light: '#FFFFFF'
+                        }
+                    });
+                    
+                    // 更新图像显示
+                    this.qrCodeImage.innerHTML = `<img src="${qrCodeDataURL}" alt="二维码" style="max-width: 100%; height: auto;">`;
+                    this.qrCodeImage.className = 'qr-code-image has-data';
+                    
+                    // 更新统计信息
+                    this.totalReceived++;
+                    this.totalReceivedElement.textContent = this.totalReceived;
+                    this.lastUpdateElement.textContent = new Date().toLocaleTimeString();
+                    
+                    this.logMessage('二维码生成成功', 'success');
+                } catch (error) {
+                    this.logMessage(`二维码生成失败: ${error.message}`, 'error');
+                    // 如果二维码生成失败，至少显示文本
+                    this.qrCodeImage.innerHTML = '<span style="color: #dc3545;">二维码生成失败</span>';
+                    this.qrCodeImage.className = 'qr-code-image has-data';
+                }
             }
 
             logMessage(message, type = 'info') {

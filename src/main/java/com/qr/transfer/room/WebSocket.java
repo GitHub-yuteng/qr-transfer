@@ -5,7 +5,10 @@ import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
-import javax.websocket.*;
+import javax.websocket.OnClose;
+import javax.websocket.OnMessage;
+import javax.websocket.OnOpen;
+import javax.websocket.Session;
 import javax.websocket.server.PathParam;
 import javax.websocket.server.ServerEndpoint;
 import java.io.IOException;
@@ -21,13 +24,11 @@ import static com.qr.transfer.room.Room.WEB_SOCKET_MAP;
 public class WebSocket {
 
     public Session session;
-    
+
     // 聊天室 Key
     public String qrCode;
-    
+
     public String userType;
-    
-    private static final String PREFIX = "https://www.kiwa-tech.com";
 
     @OnOpen
     public void onOpen(Session session, @PathParam("qrCode") String qrCode, @PathParam("userType") String userType) throws IOException {
@@ -77,6 +78,8 @@ public class WebSocket {
     @OnMessage
     public void onMessage(String message, Session session) {
         this.session = session;
+        System.out.println("收到消息 - 用户类型: " + userType + ", 消息内容: " + message);
+
         if (StringUtils.isEmpty(qrCode)) {
             this.sendMessage("请选择聊天室!");
             return;
@@ -109,20 +112,26 @@ public class WebSocket {
         }
 
         if (StringUtils.equals(CUSTOMER.getUserType(), userType)) {
-            if (message.startsWith(PREFIX)) {
-                //客户端发送信息
-                boolean contains = LINK_CACHE.contains(message);
-                if (contains) {
-                    System.out.println("已包含连接！");
-                    return;
-                }
-                LINK_CACHE.add(message);
-                if (Objects.nonNull(admin)) {
-                    this.sendMessage(admin.session, message);
-                }
-                System.out.println("发送代理端！");
-                this.sendMessage(proxy.session, message);
+            //客户端发送信息
+            boolean contains = LINK_CACHE.contains(message);
+            if (contains) {
+                System.out.println("已包含连接！");
+                return;
             }
+            LINK_CACHE.add(message);
+            if (Objects.nonNull(admin)) {
+                this.sendMessage(admin.session, message);
+            }
+            System.out.println("发送代理端！");
+            this.sendMessage(proxy.session, message);
+        } else if (StringUtils.equals(PROXY.getUserType(), userType)) {
+            // 代理端发送信息到客户端
+            System.out.println("代理端扫描到二维码，发送到客户端: " + message);
+            this.sendMessage(customer.session, message);
+            if (Objects.nonNull(admin)) {
+                this.sendMessage(admin.session, message);
+            }
+            System.out.println("二维码数据已发送到客户端");
         }
     }
 
