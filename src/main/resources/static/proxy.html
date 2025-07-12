@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>请扫描</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f2f2f2;
+            color: #333;
+        }
+
+        #videoElement {
+            width: 300px;
+            height: 300px;
+            background-color: #000;
+            margin-bottom: 10px;
+        }
+
+        #message {
+            width: 300px;
+            height: 100px;
+            margin-bottom: 10px;
+        }
+
+        #error {
+            width: 300px;
+            height: 50px;
+            margin-bottom: 10px;
+        }
+
+        #output {
+            margin-top: 10px;
+            background-color: #FFF;
+            padding: 10px;
+            border-radius: 5px;
+            color: #333;
+            box-shadow: 1px 1px 5px rgba(0, 0, 0, 0.2);
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+
+        input {
+            margin-bottom: 10px;
+            font-size: 16px;
+            width: 90%;
+            padding: 10px;
+            border: 1px solid #DDD;
+            border-radius: 5px;
+        }
+
+        button {
+            font-size: 16px;
+            padding: 10px 20px;
+            margin: 10px;
+            width: 90%;
+            max-width: 300px;
+            border: none;
+            background-color: #4CAF50;
+            color: white;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        @media (max-width: 640px) {
+            #output {
+                font-size: 8px;
+            }
+
+            button {
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+<div id="div"></div>
+<video id="videoElement" width="400" height="300"></video>
+<div id="output">二维码数据</div>
+<div id="div1"></div>
+<div id="link">连接信息</div>
+<label for="message"><textarea id="message" readonly></textarea></label>
+<div id="err">错误信息</div>
+<label for="error"><textarea id="error" readonly></textarea></label>
+<script src="https://unpkg.com/jsqr"></script>
+<script>
+    let websocket = null;
+    const messageElement = document.getElementById('message');
+    const errorElement = document.getElementById('error');
+
+    const params = new URLSearchParams(window.location.search);
+    const room = params.get("room");
+    if (!room) {
+        alert("聊天室错误！")
+    } else {
+        const ws = "ws://localhost:8080/room/" + room + "/proxy";
+        try {
+            websocket = new WebSocket(ws);
+            websocket.onopen = function () {
+                appendMessage("连接成功")
+            };
+            websocket.onclose = function () {
+                appendMessage("连接关闭");
+            };
+            websocket.onerror = function (event) {
+                appendMessage("WebSocket 错误: " + (event.message || "未知错误"));
+            };
+        } catch (e) {
+            appendError(e);
+        }
+    }
+
+    // 添加和处理信息的函数
+    function appendMessage(message) {
+        messageElement.textContent += message + '\n';
+    }
+
+    function appendError(error) {
+        errorElement.textContent += error + '\n';
+    }
+
+    // 设置视频流
+    const video = document.getElementById('videoElement');
+    video.setAttribute('webkit-playsinline', 'webkit-playsinline');
+    video.setAttribute('playsinline', 'playsinline');
+    video.setAttribute('autoplay', '');
+    video.setAttribute('muted', '');
+
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        navigator.mediaDevices.getUserMedia({video: {facingMode: "environment"}, audio: false})
+            .then(stream => video.srcObject = stream)
+            .then(scanQRCode)
+            .catch(error => appendError(error));
+    } else {
+        alert("您的浏览器不支持摄像头访问");
+    }
+
+    let lastTime = 0;
+    const interval = 500; // 设置为每500毫秒扫描一次
+
+    // 扫描二维码逻辑调整
+    function scanQRCode() {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.style.display = 'none'; // 无需在DOM中显示canvas
+        document.body.appendChild(canvas); // 在body中添加canvas以准备绘制
+
+        const output = document.getElementById('output');
+        const sendCodeData = codeData => {
+            output.textContent = `二维码数据: ${codeData}`;
+            if (websocket != null && websocket.readyState === WebSocket.OPEN) {
+                websocket.send(codeData);
+            }
+        };
+
+        const scan = timestamp => {
+            if (timestamp - lastTime >= interval) {
+                lastTime = timestamp;
+                if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                    canvas.height = video.videoHeight;
+                    canvas.width = video.videoWidth;
+                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    const code = jsQR(imageData.data, imageData.width, imageData.height, {inversionAttempts: "dontInvert"});
+                    if (code) {
+                        sendCodeData(code.data);
+                    }
+                }
+            }
+            requestAnimationFrame(scan);
+        };
+        requestAnimationFrame(scan);
+    }
+</script>
+</body>
+</html> 

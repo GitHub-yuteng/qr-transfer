@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Chat Room Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            background-color: #f4f7f6;
+            color: #333;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 700px;
+            margin: 20px auto;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+
+        .form-control, .btn {
+            border-radius: 20px;
+            border: 1px solid #ddd;
+            padding: 10px 15px;
+            width: 100%;
+            box-sizing: border-box;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            cursor: pointer;
+            background-color: #007bff;
+            color: #fff;
+            border: 0;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+        }
+
+        .btn:hover {
+            background-color: #0056b3;
+        }
+
+        .btn:focus {
+            outline: none;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: .5rem;
+        }
+
+        .form-control {
+            display: block;
+            width: 100%;
+            padding: .375rem .75rem;
+            font-size: 1rem;
+            line-height: 1.5;
+            color: #495057;
+            background-color: #fff;
+            background-clip: padding-box;
+            border: 1px solid #ced4da;
+            appearance: none;
+            border-radius: .25rem;
+            transition: border-color .15s ease-in-out, box-shadow .15s ease-in-out;
+        }
+
+        .output {
+            white-space: pre-wrap;
+            background-color: #f8f9fa;
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        #msg {
+            width: 300px;
+            height: 500px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="form-group">
+        <label for="code">聊天室代码:</label>
+        <input type="text" id="code" class="form-control"/>
+    </div>
+    <div class="form-group">
+        <button id="create_room" class="btn">创建聊天室</button>
+        <button id="query_room" class="btn">查询聊天室</button>
+        <button id="breakup_room" class="btn">解散聊天室</button>
+        <button id="break_all" class="btn">解散全部聊天室</button>
+        <button id="join_room" class="btn">加入聊天室</button>
+    </div>
+    <label for="msg" class="output-label">信息输出:</label>
+    <div id="msg" class="output"></div>
+</div>
+<script>
+
+    const messageElement = document.getElementById('msg');
+
+    function appendMessage(message) {
+        messageElement.textContent += message + '\n';
+    }
+
+    const removeUrl = '/chatroom/remove';
+    // 解散全部聊天室
+    document.getElementById('break_all').addEventListener('click', function () {
+        fetch(removeUrl)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error("error");
+                }
+                return response.text();
+            })
+            .then(data => {
+                appendMessage("解散聊天室data:" + data);
+                alert("解散聊天室成功！")
+            })
+            .catch(error => {
+                appendMessage("解散聊天室error:" + error);
+            })
+    });
+
+    const inputElement = document.getElementById('code');
+    // 解散聊天室
+    document.getElementById('breakup_room').addEventListener('click', function () {
+        const inputData = inputElement.value;
+        if (inputData === '') {
+            alert('输入不能为空');
+            throw new Error('输入不能为空');
+        }
+        const createUrl = '/chatroom/breakup?code=' + inputData;
+        fetch(createUrl)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error("error");
+                }
+                return response.text();
+            })
+            .then(data => {
+                appendMessage("解散聊天室" + inputData + "成功！");
+                alert("解散聊天室！")
+            })
+            .catch(error => {
+                appendMessage("解散聊天室error:" + error);
+            })
+    });
+
+    // 创建聊天室
+    document.getElementById('create_room').addEventListener('click', function () {
+        const inputData = inputElement.value;
+        if (inputData === '') {
+            alert('输入不能为空');
+            throw new Error('输入不能为空');
+        }
+        const createUrl = '/chatroom/creat?code=' + inputData;
+        fetch(createUrl)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error("error");
+                }
+                return response.text();
+            })
+            .then(data => {
+                appendMessage("创建聊天室" + inputData + "成功！");
+                alert("创建聊天室成功！")
+            })
+            .catch(error => {
+                appendMessage("创建聊天室error:" + error);
+            })
+    });
+
+    const queryUrl = '/chatroom/query';
+    // 查询聊天室
+    document.getElementById('query_room').addEventListener('click', function () {
+        fetch(queryUrl)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error("error");
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log("data", data);
+                appendMessage(JSON.stringify(data));
+            })
+            .catch(error => {
+                appendMessage("查询聊天室error:" + error);
+            })
+    });
+
+    // 加入聊天室
+    document.getElementById('join_room').addEventListener('click', function () {
+        const room = inputElement.value;
+        if (room === '') {
+            alert('输入不能为空');
+            throw new Error('输入不能为空');
+        }
+        const ws = "ws://localhost:8080/room/" + room + "/admin";
+        try {
+            let websocket = new WebSocket(ws);
+            websocket.onopen = function () {
+                appendMessage("连接成功:" + new Date().toLocaleString());
+            };
+            websocket.onclose = function () {
+                appendMessage("连接关闭:" + new Date().toLocaleString());
+            };
+            websocket.onerror = function (event) {
+                appendMessage("WebSocket 错误: " + (event.message || "未知错误"));
+            };
+            websocket.onmessage = function (event) {
+                const data = event.data;
+                appendMessage("信息:" + data);
+            };
+        } catch (e) {
+            appendMessage("连接错误: " + e.message);
+        }
+    });
+
+</script>
+</body>
+</html> 

@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="UTF-8">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            text-align: center;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+
+        #test {
+            padding: 60px;
+        }
+
+        .container {
+            padding: 20px;
+        }
+
+        .textarea {
+            resize: vertical;
+            height: 150px;
+        }
+
+        .text {
+            margin-top: 0;
+        }
+
+        #message {
+            width: 300px;
+            height: 100px;
+            margin-bottom: 10px;
+        }
+
+        .button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            text-align: center;
+            display: inline-block;
+            margin: 4px 2px;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 80%;
+            max-width: 300px;
+        }
+
+        .qr-display {
+            background-color: white;
+            border: 2px solid #007bff;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px auto;
+            max-width: 400px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .qr-code {
+            font-family: monospace;
+            font-size: 12px;
+            word-break: break-all;
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+
+    </style>
+    <title>二维码展示</title>
+</head>
+<body>
+<div id="test"></div>
+<div class="container">
+    <p class="text">请等待代理扫描二维码</p>
+    <button id="clickBtn" class="button">重新连接</button>
+    ⬇️⬇️⬇️⬇️⬇️⬇️⬇️⬇️⬇️⬇️⬇️⬇️⬇️
+    <div id="link">连接信息</div>
+    <label for="message"></label><textarea id="message" class="textarea" readonly></textarea>
+    
+    <div class="qr-display">
+        <h3>扫描到的二维码信息</h3>
+        <div id="qrCodeDisplay" class="qr-code">等待扫描...</div>
+    </div>
+</div>
+<script>
+
+    const params = new URLSearchParams(window.location.search);
+    const room = params.get("room");
+    if (!room) {
+        alert("聊天室错误！")
+    } else {
+        const ws = "ws://localhost:8080/room/" + room + "/customer";
+        let websocket = new WebSocket(ws);
+
+        websocket.onopen = function () {
+            appendMessage("连接成功:");
+        };
+        websocket.onclose = function () {
+            appendMessage("连接关闭:");
+        };
+        websocket.onerror = function (event) {
+            appendMessage("WebSocket 错误: " + (event.message || "未知错误"));
+        };
+
+        websocket.onmessage = function (event) {
+            const data = event.data;
+            if (data.startsWith("https://www.kiwa")) {
+                // 显示二维码信息
+                document.getElementById('qrCodeDisplay').textContent = data;
+                appendMessage("收到二维码: " + data);
+                
+                // 可以在这里添加跳转逻辑
+                // window.location.href = data;
+            }
+        };
+
+        document.getElementById('clickBtn').addEventListener('click', function () {
+            websocket.close();
+            appendMessage("重新连接成功:");
+            let resetWebsocket = new WebSocket(ws);
+            resetWebsocket.onopen = function () {
+                appendMessage("重新连接成功");
+            };
+            resetWebsocket.onclose = function () {
+                appendMessage("重新连接关闭");
+            };
+            resetWebsocket.onerror = function (event) {
+                appendMessage("resetWebsocket 错误: " + (event.message || "未知错误"));
+            };
+
+            resetWebsocket.onmessage = function (event) {
+                const data = event.data;
+                if (data.startsWith("https://www.kiwa")) {
+                    // 显示二维码信息
+                    document.getElementById('qrCodeDisplay').textContent = data;
+                    appendMessage("收到二维码: " + data);
+                    
+                    // 可以在这里添加跳转逻辑
+                    // window.location.href = data;
+                }
+            };
+        });
+    }
+
+    function appendMessage(message) {
+        const messageElement = document.getElementById('message');
+        messageElement.textContent += message + '\n'
+    }
+
+</script>
+</body>
+</html> 

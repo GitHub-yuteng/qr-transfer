@@ -27,8 +27,6 @@ public enum UserType {
     ADMIN("admin"),
     ;
 
-
     private String userType;
-
 
 }
