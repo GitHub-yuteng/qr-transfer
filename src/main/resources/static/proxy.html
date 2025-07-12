@@ -278,6 +278,9 @@
                 this.isScanning = false;
                 this.currentFacingMode = 'environment';
                 
+                // 检测移动设备
+                this.isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                
                 this.init();
             }
 
@@ -337,6 +340,16 @@
                     this.showError("您的浏览器不支持摄像头访问。请使用现代浏览器如Chrome、Firefox、Safari等。");
                     return false;
                 }
+                
+                // 移动设备特殊检查
+                if (this.isMobile) {
+                    // 检查是否在HTTPS环境下（localhost除外）
+                    if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+                        this.showError("移动设备访问摄像头需要HTTPS环境。请使用HTTPS或确保在本地开发环境中访问。");
+                        return false;
+                    }
+                }
+                
                 return true;
             }
 
@@ -366,11 +379,13 @@
             }
 
             async startCamera() {
+                // 为移动设备使用更宽松的约束
                 const constraints = {
                     video: {
                         facingMode: this.currentFacingMode,
-                        width: { ideal: 1280 },
-                        height: { ideal: 720 }
+                        // 移动设备使用更小的分辨率
+                        width: { ideal: this.isMobile ? 640 : 1280, max: this.isMobile ? 1280 : 1920 },
+                        height: { ideal: this.isMobile ? 480 : 720, max: this.isMobile ? 720 : 1080 }
                     },
                     audio: false
                 };
@@ -381,7 +396,22 @@
                     await this.video.play();
                     this.startScanning();
                 } catch (error) {
-                    throw error;
+                    // 如果第一次失败，尝试更宽松的约束
+                    console.log('First attempt failed, trying with minimal constraints');
+                    try {
+                        const fallbackConstraints = {
+                            video: {
+                                facingMode: this.currentFacingMode
+                            },
+                            audio: false
+                        };
+                        this.stream = await navigator.mediaDevices.getUserMedia(fallbackConstraints);
+                        this.video.srcObject = this.stream;
+                        await this.video.play();
+                        this.startScanning();
+                    } catch (fallbackError) {
+                        throw fallbackError;
+                    }
                 }
             }
 
@@ -406,9 +436,14 @@
             handleCameraError(error) {
                 console.error('Camera error:', error);
                 let errorMessage = '摄像头访问失败';
+                let showRetry = true;
                 
                 if (error.name === 'NotAllowedError') {
-                    errorMessage = '摄像头权限被拒绝。请在浏览器设置中允许摄像头访问，然后刷新页面。';
+                    if (this.isMobile) {
+                        errorMessage = '摄像头权限被拒绝。\n\n解决方案：\n1. 点击浏览器地址栏左侧的锁定图标\n2. 允许摄像头访问\n3. 刷新页面重试\n\n或者：\n- 在浏览器设置中允许此网站的摄像头权限';
+                    } else {
+                        errorMessage = '摄像头权限被拒绝。请在浏览器设置中允许摄像头访问，然后刷新页面。';
+                    }
                 } else if (error.name === 'NotFoundError') {
                     errorMessage = '未找到摄像头设备。请确保您的设备有可用的摄像头。';
                 } else if (error.name === 'NotReadableError') {
@@ -418,13 +453,28 @@
                     // 尝试降低分辨率
                     this.tryLowerResolution();
                     return;
+                } else if (error.name === 'NotSupportedError') {
+                    errorMessage = '您的浏览器不支持摄像头访问。请使用Chrome、Firefox、Safari等现代浏览器。';
+                    showRetry = false;
+                } else if (error.name === 'SecurityError') {
+                    if (this.isMobile) {
+                        errorMessage = '安全错误：移动设备访问摄像头需要HTTPS环境。\n\n解决方案：\n1. 使用HTTPS访问此页面\n2. 或在本地开发环境中使用localhost访问';
+                    } else {
+                        errorMessage = '安全错误：摄像头访问被阻止。请检查浏览器安全设置。';
+                    }
+                    showRetry = false;
                 } else {
                     errorMessage = `摄像头错误: ${error.message || error.name}`;
                 }
                 
                 this.showError(errorMessage);
-                this.requestPermissionBtn.innerHTML = '重试摄像头';
-                this.requestPermissionBtn.disabled = false;
+                if (showRetry) {
+                    this.requestPermissionBtn.innerHTML = '重试摄像头';
+                    this.requestPermissionBtn.disabled = false;
+                } else {
+                    this.requestPermissionBtn.innerHTML = '摄像头不可用';
+                    this.requestPermissionBtn.disabled = true;
+                }
             }
 
             async tryLowerResolution() {
@@ -432,8 +482,8 @@
                     const constraints = {
                         video: {
                             facingMode: this.currentFacingMode,
-                            width: { ideal: 640 },
-                            height: { ideal: 480 }
+                            width: { ideal: 320, max: 640 },
+                            height: { ideal: 240, max: 480 }
                         },
                         audio: false
                     };
@@ -505,7 +555,14 @@
             connectWebSocket() {
                 if (!this.room) return;
                 
-                const wsUrl = `ws://localhost:8080/room/${this.room}/proxy`;
+                // 动态获取WebSocket URL，支持本地开发和生产环境
+                const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+                const host = location.hostname === 'localhost' || location.hostname === '127.0.0.1' 
+                    ? 'localhost:8080' 
+                    : location.host;
+                const wsUrl = `${protocol}//${host}/room/${this.room}/proxy`;
+                
+                console.log('Connecting to WebSocket:', wsUrl);
                 
                 try {
                     this.websocket = new WebSocket(wsUrl);
@@ -568,6 +625,29 @@
             scanner.destroy();
         });
 
+        // 检查HTTPS环境
+        function checkHTTPS() {
+            const mobileTips = document.getElementById('mobileTips');
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            
+            if (isMobile) {
+                if (mobileTips) {
+                    mobileTips.classList.remove('hidden');
+                }
+            } else if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+                if (mobileTips) {
+                    mobileTips.classList.remove('hidden');
+                }
+            } else {
+                if (mobileTips) {
+                    mobileTips.classList.add('hidden');
+                }
+            }
+        }
+
+        // 页面加载时检查HTTPS
+        checkHTTPS();
+
         // 添加调试功能
         function showDebugInfo() {
             const debugInfo = document.getElementById('debugInfo');
@@ -576,14 +656,48 @@
             if (debugInfo && debugText) {
                 const info = [
                     `浏览器: ${navigator.userAgent}`,
+                    `协议: ${location.protocol}`,
+                    `主机: ${location.hostname}:${location.port}`,
                     `HTTPS: ${location.protocol === 'https:'}`,
                     `Room参数: ${new URLSearchParams(window.location.search).get('room') || '未设置'}`,
                     `摄像头支持: ${navigator.mediaDevices && navigator.mediaDevices.getUserMedia ? '是' : '否'}`,
-                    `按钮状态: ${document.getElementById('requestPermission') ? '找到' : '未找到'}`
+                    `按钮状态: ${document.getElementById('requestPermission') ? '找到' : '未找到'}`,
+                    `移动设备: ${/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ? '是' : '否'}`,
+                    `getUserMedia支持: ${navigator.mediaDevices?.getUserMedia ? '是' : '否'}`,
+                    `enumerateDevices支持: ${navigator.mediaDevices?.enumerateDevices ? '是' : '否'}`,
+                    `当前时间: ${new Date().toLocaleString()}`,
+                    `页面URL: ${location.href}`
                 ].join('\n');
                 
                 debugText.textContent = info;
                 debugInfo.classList.remove('hidden');
+            }
+        }
+
+        // 添加摄像头设备检测功能
+        async function checkCameraDevices() {
+            try {
+                if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) {
+                    const devices = await navigator.mediaDevices.enumerateDevices();
+                    const videoDevices = devices.filter(device => device.kind === 'videoinput');
+                    console.log('检测到的摄像头设备:', videoDevices);
+                    
+                    const debugInfo = document.getElementById('debugInfo');
+                    const debugText = document.getElementById('debugText');
+                    
+                    if (debugInfo && debugText) {
+                        const currentInfo = debugText.textContent;
+                        const deviceInfo = `\n摄像头设备数量: ${videoDevices.length}`;
+                        const deviceDetails = videoDevices.map((device, index) => 
+                            `设备${index + 1}: ${device.label || '未命名设备'}`
+                        ).join('\n');
+                        
+                        debugText.textContent = currentInfo + deviceInfo + '\n' + deviceDetails;
+                        debugInfo.classList.remove('hidden');
+                    }
+                }
+            } catch (error) {
+                console.error('检测摄像头设备失败:', error);
             }
         }
 
@@ -596,9 +710,17 @@
             debugBtn.style.padding = '8px 16px';
             debugBtn.onclick = showDebugInfo;
             
+            const cameraBtn = document.createElement('button');
+            cameraBtn.textContent = '检测摄像头';
+            cameraBtn.className = 'button secondary';
+            cameraBtn.style.fontSize = '12px';
+            cameraBtn.style.padding = '8px 16px';
+            cameraBtn.onclick = checkCameraDevices;
+            
             const buttonGroup = document.querySelector('.button-group');
             if (buttonGroup) {
                 buttonGroup.appendChild(debugBtn);
+                buttonGroup.appendChild(cameraBtn);
             }
         }
     </script>
