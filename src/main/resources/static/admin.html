@@ -590,27 +590,32 @@
                 return;
             }
 
+            // 如果已经有连接，先关闭
+            if (window.adminWebSocket && window.adminWebSocket.readyState === WebSocket.OPEN) {
+                window.adminWebSocket.close();
+            }
+
             const ws = `ws://localhost:8080/room/${encodeURIComponent(room)}/admin`;
             
             try {
-                const websocket = new WebSocket(ws);
+                window.adminWebSocket = new WebSocket(ws);
                 
-                websocket.onopen = function () {
+                window.adminWebSocket.onopen = function () {
                     appendMessage(`WebSocket 连接成功: ${new Date().toLocaleString()}`, 'success');
                     showNotification('WebSocket 连接成功！', 'success');
                 };
                 
-                websocket.onclose = function () {
-                    appendMessage(`WebSocket 连接关闭: ${new Date().toLocaleString()}`, 'info');
+                window.adminWebSocket.onclose = function (event) {
+                    appendMessage(`WebSocket 连接关闭: ${new Date().toLocaleString()} (代码: ${event.code})`, 'info');
                     showNotification('WebSocket 连接已关闭', 'info');
                 };
                 
-                websocket.onerror = function (event) {
+                window.adminWebSocket.onerror = function (event) {
                     appendMessage(`WebSocket 错误: ${event.message || '未知错误'}`, 'error');
                     showNotification('WebSocket 连接错误！', 'error');
                 };
                 
-                websocket.onmessage = function (event) {
+                window.adminWebSocket.onmessage = function (event) {
                     appendMessage(`收到消息: ${event.data}`, 'info');
                 };
             } catch (e) {

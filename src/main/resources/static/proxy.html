@@ -104,10 +104,26 @@
         try {
             websocket = new WebSocket(ws);
             websocket.onopen = function () {
-                appendMessage("连接成功")
+                appendMessage("连接成功");
             };
-            websocket.onclose = function () {
-                appendMessage("连接关闭");
+            websocket.onclose = function (event) {
+                appendMessage("连接关闭 (代码: " + event.code + ")");
+                // 尝试重新连接
+                setTimeout(() => {
+                    if (websocket.readyState === WebSocket.CLOSED) {
+                        appendMessage("尝试重新连接...");
+                        websocket = new WebSocket(ws);
+                        websocket.onopen = function () {
+                            appendMessage("重新连接成功");
+                        };
+                        websocket.onclose = function () {
+                            appendMessage("重新连接失败");
+                        };
+                        websocket.onerror = function (event) {
+                            appendMessage("重新连接错误: " + (event.message || "未知错误"));
+                        };
+                    }
+                }, 3000);
             };
             websocket.onerror = function (event) {
                 appendMessage("WebSocket 错误: " + (event.message || "未知错误"));

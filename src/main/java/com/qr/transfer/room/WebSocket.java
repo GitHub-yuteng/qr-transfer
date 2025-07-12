@@ -40,8 +40,9 @@ public class WebSocket {
             return;
         }
 
+        // 如果聊天室不存在，自动创建
         if (!WEB_SOCKET_MAP.containsKey(qrCode)) {
-            throw new RuntimeException("聊天室不存在！");
+            Room.createRoom(qrCode);
         }
 
         Map<String, WebSocket> map = WEB_SOCKET_MAP.get(qrCode);
