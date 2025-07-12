@@ -57,10 +57,11 @@ public class ChatRoomController {
     public Map<String, Object> queryRooms() {
         Map<String, Object> result = new HashMap<>();
         try {
-            Set<String> roomList = Room.getRoomList();
+            Map<String, Object> roomDetails = Room.getRoomDetails();
             result.put("success", true);
-            result.put("data", roomList);
-            result.put("count", roomList.size());
+            result.put("data", roomDetails);
+            result.put("count", roomDetails.size());
+            result.put("debug", "返回详细聊天室信息，包含用户连接状态");
         } catch (Exception e) {
             result.put("success", false);
             result.put("message", e.getMessage());

@@ -175,6 +175,16 @@
             box-shadow: 0 10px 20px rgba(108, 117, 125, 0.3);
         }
 
+        .btn-info {
+            background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+            color: white;
+        }
+
+        .btn-info:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(23, 162, 184, 0.3);
+        }
+
         .btn:disabled {
             opacity: 0.6;
             cursor: not-allowed;
@@ -352,6 +362,41 @@
             font-size: 0.9rem;
             margin-top: 5px;
         }
+
+        .user-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            background-color: #e0e0e0;
+            color: #333;
+            font-size: 0.8rem;
+            margin-right: 5px;
+            font-weight: 500;
+        }
+
+        .user-badge.admin {
+            background-color: #667eea;
+            color: white;
+        }
+
+        .user-badge.proxy {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .user-badge.customer {
+            background-color: #ffc107;
+            color: #333;
+        }
+
+        .user-badge.user {
+            background-color: #495057;
+            color: white;
+        }
+
+        .no-users {
+            color: #888;
+        }
     </style>
 </head>
 <body>
@@ -374,6 +419,9 @@
                     </button>
                     <button id="query_room" class="btn btn-primary">
                         <i class="fas fa-search"></i> 查询聊天室
+                    </button>
+                    <button id="refresh_rooms" class="btn btn-info">
+                        <i class="fas fa-sync-alt"></i> 刷新状态
                     </button>
                     <button id="join_room" class="btn btn-warning">
                         <i class="fas fa-sign-in-alt"></i> 加入聊天室
@@ -462,8 +510,17 @@
                 return;
             }
 
-            // 确保rooms是数组格式
-            const roomArray = Array.isArray(rooms) ? rooms : Array.from(rooms);
+            // 处理新的数据结构
+            let roomArray = [];
+            if (Array.isArray(rooms)) {
+                roomArray = rooms;
+            } else if (typeof rooms === 'object') {
+                // 新的数据结构：{roomCode: {code, userCount, userList, ...}}
+                roomArray = Object.values(rooms);
+            } else {
+                // 兼容旧的数据结构（Set）
+                roomArray = Array.from(rooms);
+            }
             
             if (roomArray.length === 0) {
                 roomListElement.style.display = 'none';
@@ -474,9 +531,32 @@
             roomArray.forEach(room => {
                 const roomItem = document.createElement('div');
                 roomItem.className = 'room-item';
+                
+                // 处理新的数据结构
+                let roomCode, userList, userCount;
+                if (typeof room === 'object' && room.code) {
+                    // 新数据结构
+                    roomCode = room.code;
+                    userList = room.userList || [];
+                    userCount = room.userCount || 0;
+                } else {
+                    // 旧数据结构或简单字符串
+                    roomCode = room.code || room;
+                    userList = [];
+                    userCount = 0;
+                }
+                
+                // 格式化用户列表
+                const userDisplay = userList.length > 0 
+                    ? userList.map(user => `<span class="user-badge ${user}">${user}</span>`).join(' ')
+                    : '<span class="no-users">暂无用户</span>';
+                
                 roomItem.innerHTML = `
-                    <div class="room-code">${room.code || room}</div>
-                    <div class="room-info">创建时间: ${new Date().toLocaleString()}</div>
+                    <div class="room-code">${roomCode}</div>
+                    <div class="room-info">
+                        <div class="user-count">在线用户: ${userCount}</div>
+                        <div class="user-list">${userDisplay}</div>
+                    </div>
                 `;
                 roomItemsElement.appendChild(roomItem);
             });
@@ -583,6 +663,28 @@
             }
         });
 
+        document.getElementById('refresh_rooms').addEventListener('click', async function () {
+            try {
+                const response = await makeRequest('/chatroom/query');
+                appendMessage(`刷新聊天室状态成功: ${JSON.stringify(response, null, 2)}`, 'success');
+                
+                // 检查响应结构并提取聊天室列表
+                if (response && response.success && response.data) {
+                    displayRoomList(response.data);
+                    showNotification(`刷新成功！共找到 ${response.count || 0} 个聊天室`, 'success');
+                } else if (response && response.success) {
+                    displayRoomList([]);
+                    showNotification('刷新成功！暂无聊天室', 'info');
+                } else {
+                    appendMessage(`刷新失败: ${response.message || '未知错误'}`, 'error');
+                    showNotification('刷新失败！', 'error');
+                }
+            } catch (error) {
+                appendMessage(`刷新聊天室状态失败: ${error.message}`, 'error');
+                showNotification('刷新聊天室状态失败！', 'error');
+            }
+        });
+
         document.getElementById('join_room').addEventListener('click', function () {
             const room = document.getElementById('code').value.trim();
             if (!room) {
@@ -638,6 +740,35 @@
 
         // 初始化
         appendMessage('聊天室管理系统已启动', 'info');
+        
+        // 自动刷新聊天室状态
+        let autoRefreshInterval = null;
+        
+        function startAutoRefresh() {
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+            }
+            autoRefreshInterval = setInterval(async () => {
+                try {
+                    const response = await makeRequest('/chatroom/query');
+                    if (response && response.success && response.data) {
+                        displayRoomList(response.data);
+                    }
+                } catch (error) {
+                    // 静默处理自动刷新错误
+                }
+            }, 5000); // 每5秒刷新一次
+        }
+        
+        function stopAutoRefresh() {
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+                autoRefreshInterval = null;
+            }
+        }
+        
+        // 启动自动刷新
+        startAutoRefresh();
     </script>
 </body>
 </html> 
