@@ -21,14 +21,52 @@
             line-height: 1.6;
         }
 
-        .container {
-            max-width: 900px;
+        .main-wrapper {
+            display: flex;
+            gap: 20px;
+            max-width: 1400px;
             margin: 20px auto;
+            align-items: flex-start;
+        }
+
+        .main-container {
+            flex: 1;
+            max-width: 900px;
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(10px);
             border-radius: 20px;
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
             overflow: hidden;
+            height: 800px;
+        }
+
+        .log-container {
+            width: 500px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            height: 800px;
+        }
+
+        .log-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .log-header h3 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .log-content {
+            padding: 20px;
+            height: calc(100% - 80px);
+            overflow-y: auto;
         }
 
         .header {
@@ -51,6 +89,29 @@
 
         .content {
             padding: 40px;
+            height: calc(100% - 120px);
+            overflow-y: auto;
+        }
+
+        .main-layout {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 30px;
+            align-items: start;
+            height: 100%;
+        }
+
+        .left-panel {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .right-panel {
+            position: sticky;
+            top: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
         }
 
         .form-section {
@@ -192,7 +253,7 @@
         }
 
         .output-section {
-            margin-top: 30px;
+            margin-top: 0;
         }
 
         .output-label {
@@ -211,7 +272,7 @@
             font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
             font-size: 0.9rem;
             line-height: 1.5;
-            height: 400px;
+            height: 100%;
             overflow-y: auto;
             white-space: pre-wrap;
             word-wrap: break-word;
@@ -306,9 +367,20 @@
         }
 
         @media (max-width: 768px) {
-            .container {
+            .main-wrapper {
+                flex-direction: column;
                 margin: 10px;
+            }
+
+            .main-container {
                 border-radius: 15px;
+                height: 600px;
+            }
+
+            .log-container {
+                width: 100%;
+                border-radius: 15px;
+                height: 800px;
             }
 
             .header {
@@ -321,6 +393,28 @@
 
             .content {
                 padding: 20px;
+                height: calc(100% - 100px);
+            }
+
+            .log-content {
+                height: calc(100% - 60px);
+            }
+
+            .main-layout {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .right-panel {
+                position: static;
+            }
+
+            .room-list {
+                height: 250px;
+            }
+
+            .output {
+                height: 100%;
             }
 
             .btn-group {
@@ -336,7 +430,28 @@
             background: #f8f9fa;
             border-radius: 12px;
             padding: 20px;
-            margin-top: 20px;
+            margin-top: 0;
+            height: 100%;
+            overflow-y: auto;
+            border: 1px solid #e9ecef;
+        }
+
+        .room-list::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .room-list::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+
+        .room-list::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 3px;
+        }
+
+        .room-list::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
         }
 
         .room-item {
@@ -400,59 +515,68 @@
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1><i class="fas fa-comments"></i> 聊天室管理系统</h1>
-            <p>管理聊天室的创建、查询和删除操作</p>
+    <div class="main-wrapper">
+        <div class="main-container">
+            <div class="header">
+                <h1><i class="fas fa-comments"></i> 聊天室管理系统</h1>
+                <p>管理聊天室的创建、查询和删除操作</p>
+            </div>
+            
+            <div class="content">
+                <div class="main-layout">
+                    <div class="left-panel">
+                        <div class="form-section">
+                            <div class="form-group">
+                                <label for="code"><i class="fas fa-hashtag"></i> 聊天室代码:</label>
+                                <input type="text" id="code" class="form-control" placeholder="请输入聊天室代码..." />
+                            </div>
+                            
+                            <div class="btn-group">
+                                <button id="create_room" class="btn btn-success">
+                                    <i class="fas fa-plus"></i> 创建聊天室
+                                </button>
+                                <button id="query_room" class="btn btn-primary">
+                                    <i class="fas fa-search"></i> 查询聊天室
+                                </button>
+                                <button id="refresh_rooms" class="btn btn-info">
+                                    <i class="fas fa-sync-alt"></i> 刷新状态
+                                </button>
+                                <button id="join_room" class="btn btn-warning">
+                                    <i class="fas fa-sign-in-alt"></i> 加入聊天室
+                                </button>
+                                <button id="breakup_room" class="btn btn-danger">
+                                    <i class="fas fa-trash"></i> 解散聊天室
+                                </button>
+                                <button id="break_all" class="btn btn-danger">
+                                    <i class="fas fa-trash-alt"></i> 解散全部聊天室
+                                </button>
+                                <button id="clear_logs" class="btn btn-secondary">
+                                    <i class="fas fa-eraser"></i> 清空日志
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="loading" id="loading">
+                            <div class="spinner"></div>
+                            <p>处理中...</p>
+                        </div>
+                    </div>
+                    <div class="right-panel">
+                        <div id="room-list" class="room-list">
+                            <h3><i class="fas fa-list"></i> 聊天室列表</h3>
+                            <div id="room-items"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-        
-        <div class="content">
-            <div class="form-section">
-                <div class="form-group">
-                    <label for="code"><i class="fas fa-hashtag"></i> 聊天室代码:</label>
-                    <input type="text" id="code" class="form-control" placeholder="请输入聊天室代码..." />
-                </div>
-                
-                <div class="btn-group">
-                    <button id="create_room" class="btn btn-success">
-                        <i class="fas fa-plus"></i> 创建聊天室
-                    </button>
-                    <button id="query_room" class="btn btn-primary">
-                        <i class="fas fa-search"></i> 查询聊天室
-                    </button>
-                    <button id="refresh_rooms" class="btn btn-info">
-                        <i class="fas fa-sync-alt"></i> 刷新状态
-                    </button>
-                    <button id="join_room" class="btn btn-warning">
-                        <i class="fas fa-sign-in-alt"></i> 加入聊天室
-                    </button>
-                    <button id="breakup_room" class="btn btn-danger">
-                        <i class="fas fa-trash"></i> 解散聊天室
-                    </button>
-                    <button id="break_all" class="btn btn-danger">
-                        <i class="fas fa-trash-alt"></i> 解散全部聊天室
-                    </button>
-                    <button id="clear_logs" class="btn btn-secondary">
-                        <i class="fas fa-eraser"></i> 清空日志
-                    </button>
-                </div>
-            </div>
 
-            <div class="loading" id="loading">
-                <div class="spinner"></div>
-                <p>处理中...</p>
+        <div class="log-container">
+            <div class="log-header">
+                <h3><i class="fas fa-terminal"></i> 系统日志</h3>
             </div>
-
-            <div class="output-section">
-                <label for="msg" class="output-label">
-                    <i class="fas fa-terminal"></i> 系统日志:
-                </label>
+            <div class="log-content">
                 <div id="msg" class="output"></div>
-            </div>
-
-            <div id="room-list" class="room-list" style="display: none;">
-                <h3><i class="fas fa-list"></i> 聊天室列表</h3>
-                <div id="room-items"></div>
             </div>
         </div>
     </div>
@@ -505,8 +629,11 @@
         }
 
         function displayRoomList(rooms) {
+            // 始终显示聊天室列表容器
+            roomListElement.style.display = 'block';
+            
             if (!rooms || (Array.isArray(rooms) && rooms.length === 0)) {
-                roomListElement.style.display = 'none';
+                roomItemsElement.innerHTML = '<div class="room-item"><div class="room-info">暂无聊天室</div></div>';
                 return;
             }
 
@@ -523,7 +650,7 @@
             }
             
             if (roomArray.length === 0) {
-                roomListElement.style.display = 'none';
+                roomItemsElement.innerHTML = '<div class="room-item"><div class="room-info">暂无聊天室</div></div>';
                 return;
             }
 
@@ -560,7 +687,6 @@
                 `;
                 roomItemsElement.appendChild(roomItem);
             });
-            roomListElement.style.display = 'block';
         }
 
         // API 调用函数
@@ -741,6 +867,9 @@
         // 初始化
         appendMessage('聊天室管理系统已启动', 'info');
         
+        // 初始化显示聊天室列表
+        displayRoomList([]);
+        
         // 自动刷新聊天室状态
         let autoRefreshInterval = null;
         
@@ -753,6 +882,8 @@
                     const response = await makeRequest('/chatroom/query');
                     if (response && response.success && response.data) {
                         displayRoomList(response.data);
+                    } else {
+                        displayRoomList([]);
                     }
                 } catch (error) {
                     // 静默处理自动刷新错误
