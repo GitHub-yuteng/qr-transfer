@@ -3,155 +3,494 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>二维码接收器</title>
     <style>
-        body {
-            font-family: 'Arial', sans-serif;
-            text-align: center;
-            background-color: #f0f0f0;
+        * {
             margin: 0;
             padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
             color: #333;
-        }
-
-        #test {
-            padding: 60px;
-        }
-
-        .container {
             padding: 20px;
         }
 
-        .textarea {
-            resize: vertical;
-            height: 150px;
+        .main-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
         }
 
-        .text {
-            margin-top: 0;
+        .header {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+            padding: 30px;
+            text-align: center;
         }
 
-        #message {
-            width: 300px;
-            height: 100px;
+        .header h1 {
+            font-size: 2.5em;
             margin-bottom: 10px;
+            font-weight: 300;
         }
 
-        .button {
-            background-color: #007bff;
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .status-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            border-left: 5px solid #007bff;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 10px;
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.connected {
+            background-color: #28a745;
+        }
+
+        .status-dot.disconnected {
+            background-color: #dc3545;
+        }
+
+        .status-dot.connecting {
+            background-color: #ffc107;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .status-text {
+            font-weight: 600;
+            font-size: 1.1em;
+        }
+
+        .room-info {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .room-info strong {
+            color: #007bff;
+        }
+
+        .qr-section {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .qr-section:hover {
+            border-color: #007bff;
+            box-shadow: 0 5px 15px rgba(0,123,255,0.1);
+        }
+
+        .qr-section h3 {
+            color: #007bff;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+
+        .qr-code-display {
+            background: #f8f9fa;
+            border: 2px dashed #dee2e6;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            min-height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            word-break: break-all;
+            line-height: 1.5;
+            transition: all 0.3s ease;
+        }
+
+        .qr-code-display.has-data {
+            border-color: #28a745;
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .qr-code-display.empty {
+            color: #6c757d;
+            font-style: italic;
+        }
+
+        .debug-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+
+        .debug-section h4 {
+            color: #495057;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+
+        .debug-log {
+            background: #212529;
+            color: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            height: 200px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+
+        .debug-log::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .debug-log::-webkit-scrollbar-track {
+            background: #343a40;
+            border-radius: 4px;
+        }
+
+        .debug-log::-webkit-scrollbar-thumb {
+            background: #6c757d;
+            border-radius: 4px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #007bff, #0056b3);
             color: white;
             border: none;
-            padding: 10px 20px;
-            text-align: center;
-            display: inline-block;
-            margin: 4px 2px;
-            border-radius: 4px;
+            padding: 12px 25px;
+            border-radius: 25px;
             cursor: pointer;
-            width: 80%;
-            max-width: 300px;
+            font-size: 1em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            min-width: 120px;
         }
 
-        .qr-display {
-            background-color: white;
-            border: 2px solid #007bff;
-            border-radius: 8px;
-            padding: 20px;
-            margin: 20px auto;
-            max-width: 400px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,123,255,0.3);
         }
 
-        .qr-code {
-            font-family: monospace;
-            font-size: 12px;
-            word-break: break-all;
-            background-color: #f8f9fa;
-            padding: 10px;
-            border-radius: 4px;
-            margin: 10px 0;
+        .btn:active {
+            transform: translateY(0);
         }
 
+        .btn.secondary {
+            background: linear-gradient(135deg, #6c757d, #495057);
+        }
+
+        .btn.secondary:hover {
+            box-shadow: 0 5px 15px rgba(108,117,125,0.3);
+        }
+
+        .btn.danger {
+            background: linear-gradient(135deg, #dc3545, #c82333);
+        }
+
+        .btn.danger:hover {
+            box-shadow: 0 5px 15px rgba(220,53,69,0.3);
+        }
+
+        .timestamp {
+            color: #6c757d;
+            font-size: 0.9em;
+        }
+
+        .message-item {
+            margin-bottom: 8px;
+            padding: 5px 0;
+            border-bottom: 1px solid #343a40;
+        }
+
+        .message-item:last-child {
+            border-bottom: none;
+        }
+
+        .message-time {
+            color: #28a745;
+            font-weight: bold;
+        }
+
+        .message-content {
+            color: #f8f9fa;
+        }
+
+        .error-message {
+            color: #ff6b6b;
+        }
+
+        .success-message {
+            color: #51cf66;
+        }
+
+        .info-message {
+            color: #74c0fc;
+        }
+
+        @media (max-width: 768px) {
+            .main-container {
+                margin: 10px;
+                border-radius: 15px;
+            }
+            
+            .header {
+                padding: 20px;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+            
+            .button-group {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .btn {
+                width: 100%;
+                max-width: 300px;
+            }
+        }
     </style>
-    <title>二维码展示</title>
 </head>
 <body>
-<div id="test"></div>
-<div class="container">
-    <p class="text">请等待代理扫描二维码</p>
-    <button id="clickBtn" class="button">重新连接</button>
-    ⬇️⬇️⬇️⬇️⬇️⬇️⬇️⬇️⬇️⬇️⬇️⬇️⬇️
-    <div id="link">连接信息</div>
-    <label for="message"></label><textarea id="message" class="textarea" readonly></textarea>
-    
-    <div class="qr-display">
-        <h3>扫描到的二维码信息</h3>
-        <div id="qrCodeDisplay" class="qr-code">等待扫描...</div>
+    <div class="main-container">
+        <div class="header">
+            <h1>📱 二维码接收器</h1>
+            <p>等待代理扫描二维码并接收数据</p>
+        </div>
+
+        <div class="content">
+            <!-- 连接状态区域 -->
+            <div class="status-section">
+                <div class="status-indicator">
+                    <div id="statusDot" class="status-dot disconnected"></div>
+                    <span id="statusText" class="status-text">未连接</span>
+                </div>
+                <div class="room-info">
+                    <strong>聊天室ID:</strong> <span id="roomId">加载中...</span>
+                </div>
+            </div>
+
+            <!-- 二维码显示区域 -->
+            <div class="qr-section">
+                <h3>🔍 扫描到的二维码信息</h3>
+                <div id="qrCodeDisplay" class="qr-code-display empty">
+                    等待扫描二维码...
+                </div>
+            </div>
+
+            <!-- 调试信息区域 -->
+            <div class="debug-section">
+                <h4>🔧 调试信息</h4>
+                <div id="debugLog" class="debug-log"></div>
+            </div>
+
+            <!-- 控制按钮 -->
+            <div class="button-group">
+                <button id="connectBtn" class="btn">连接</button>
+                <button id="reconnectBtn" class="btn secondary">重新连接</button>
+                <button id="clearLogBtn" class="btn danger">清空日志</button>
+            </div>
+        </div>
     </div>
-</div>
-<script>
 
-    const params = new URLSearchParams(window.location.search);
-    const room = params.get("room");
-    if (!room) {
-        alert("聊天室错误！")
-    } else {
-        const ws = "ws://localhost:8080/room/" + room + "/customer";
-        let websocket = new WebSocket(ws);
-
-        websocket.onopen = function () {
-            appendMessage("连接成功:");
-        };
-        websocket.onclose = function () {
-            appendMessage("连接关闭:");
-        };
-        websocket.onerror = function (event) {
-            appendMessage("WebSocket 错误: " + (event.message || "未知错误"));
-        };
-
-        websocket.onmessage = function (event) {
-            const data = event.data;
-            if (data.startsWith("https://www.kiwa")) {
-                // 显示二维码信息
-                document.getElementById('qrCodeDisplay').textContent = data;
-                appendMessage("收到二维码: " + data);
+    <script>
+        class QRReceiver {
+            constructor() {
+                this.room = this.getRoomFromURL();
+                this.websocket = null;
+                this.isConnected = false;
+                this.reconnectAttempts = 0;
+                this.maxReconnectAttempts = 5;
                 
-                // 可以在这里添加跳转逻辑
-                // window.location.href = data;
-            }
-        };
-
-        document.getElementById('clickBtn').addEventListener('click', function () {
-            websocket.close();
-            appendMessage("重新连接成功:");
-            let resetWebsocket = new WebSocket(ws);
-            resetWebsocket.onopen = function () {
-                appendMessage("重新连接成功");
-            };
-            resetWebsocket.onclose = function () {
-                appendMessage("重新连接关闭");
-            };
-            resetWebsocket.onerror = function (event) {
-                appendMessage("resetWebsocket 错误: " + (event.message || "未知错误"));
-            };
-
-            resetWebsocket.onmessage = function (event) {
-                const data = event.data;
-                if (data.startsWith("https://www.kiwa")) {
-                    // 显示二维码信息
-                    document.getElementById('qrCodeDisplay').textContent = data;
-                    appendMessage("收到二维码: " + data);
-                    
-                    // 可以在这里添加跳转逻辑
-                    // window.location.href = data;
+                this.initializeElements();
+                this.bindEvents();
+                this.updateRoomInfo();
+                
+                if (this.room) {
+                    this.connect();
+                } else {
+                    this.logMessage('错误: 聊天室参数缺失', 'error');
+                    this.updateStatus('disconnected');
                 }
-            };
+            }
+
+            getRoomFromURL() {
+                const params = new URLSearchParams(window.location.search);
+                return params.get("room");
+            }
+
+            initializeElements() {
+                this.statusDot = document.getElementById('statusDot');
+                this.statusText = document.getElementById('statusText');
+                this.roomId = document.getElementById('roomId');
+                this.qrCodeDisplay = document.getElementById('qrCodeDisplay');
+                this.debugLog = document.getElementById('debugLog');
+                this.connectBtn = document.getElementById('connectBtn');
+                this.reconnectBtn = document.getElementById('reconnectBtn');
+                this.clearLogBtn = document.getElementById('clearLogBtn');
+            }
+
+            bindEvents() {
+                this.connectBtn.addEventListener('click', () => this.connect());
+                this.reconnectBtn.addEventListener('click', () => this.reconnect());
+                this.clearLogBtn.addEventListener('click', () => this.clearLog());
+            }
+
+            updateRoomInfo() {
+                this.roomId.textContent = this.room || '无效';
+            }
+
+            updateStatus(status) {
+                this.statusDot.className = `status-dot ${status}`;
+                
+                const statusMessages = {
+                    'connected': '已连接',
+                    'disconnected': '未连接',
+                    'connecting': '连接中...'
+                };
+                
+                this.statusText.textContent = statusMessages[status] || '未知状态';
+                this.isConnected = status === 'connected';
+            }
+
+            connect() {
+                if (!this.room) {
+                    this.logMessage('错误: 聊天室参数缺失', 'error');
+                    return;
+                }
+
+                this.updateStatus('connecting');
+                this.logMessage('正在连接...', 'info');
+
+                const wsUrl = `ws://localhost:8080/room/${this.room}/customer`;
+                this.websocket = new WebSocket(wsUrl);
+
+                this.websocket.onopen = () => {
+                    this.updateStatus('connected');
+                    this.logMessage('WebSocket 连接成功', 'success');
+                    this.reconnectAttempts = 0;
+                };
+
+                this.websocket.onclose = (event) => {
+                    this.updateStatus('disconnected');
+                    this.logMessage(`连接关闭 (代码: ${event.code})`, 'error');
+                    
+                    if (this.reconnectAttempts < this.maxReconnectAttempts) {
+                        this.logMessage(`5秒后尝试重新连接... (${this.reconnectAttempts + 1}/${this.maxReconnectAttempts})`, 'info');
+                        setTimeout(() => this.reconnect(), 5000);
+                    }
+                };
+
+                this.websocket.onerror = (event) => {
+                    this.logMessage(`WebSocket 错误: ${event.message || '未知错误'}`, 'error');
+                };
+
+                this.websocket.onmessage = (event) => {
+                    const data = event.data;
+                    this.logMessage(`收到数据: ${data}`, 'info');
+                    
+                    if (data.startsWith("https://www.kiwa")) {
+                        this.displayQRCode(data);
+                        this.logMessage('二维码数据已更新', 'success');
+                    }
+                };
+            }
+
+            reconnect() {
+                this.reconnectAttempts++;
+                this.logMessage(`重新连接尝试 ${this.reconnectAttempts}/${this.maxReconnectAttempts}`, 'info');
+                
+                if (this.websocket) {
+                    this.websocket.close();
+                }
+                
+                setTimeout(() => {
+                    this.connect();
+                }, 1000);
+            }
+
+            displayQRCode(data) {
+                this.qrCodeDisplay.textContent = data;
+                this.qrCodeDisplay.className = 'qr-code-display has-data';
+            }
+
+            logMessage(message, type = 'info') {
+                const timestamp = new Date().toLocaleTimeString();
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message-item ${type}-message`;
+                messageDiv.innerHTML = `
+                    <span class="message-time">[${timestamp}]</span>
+                    <span class="message-content">${message}</span>
+                `;
+                
+                this.debugLog.appendChild(messageDiv);
+                this.debugLog.scrollTop = this.debugLog.scrollHeight;
+            }
+
+            clearLog() {
+                this.debugLog.innerHTML = '';
+                this.logMessage('日志已清空', 'info');
+            }
+        }
+
+        // 初始化应用
+        document.addEventListener('DOMContentLoaded', () => {
+            new QRReceiver();
         });
-    }
-
-    function appendMessage(message) {
-        const messageElement = document.getElementById('message');
-        messageElement.textContent += message + '\n'
-    }
-
-</script>
+    </script>
 </body>
 </html> 
