@@ -355,6 +355,8 @@
                 this.isConnected = false;
                 this.reconnectAttempts = 0;
                 this.maxReconnectAttempts = 5;
+                this.isManualReconnect = false; // 添加手动重连标志
+                this.autoReconnectEnabled = true; // 添加自动重连开关
                 
                 this.initializeElements();
                 this.bindEvents();
@@ -413,25 +415,45 @@
                     return;
                 }
 
+                // 如果已经有连接，先关闭
+                if (this.websocket && this.websocket.readyState !== WebSocket.CLOSED) {
+                    this.websocket.close();
+                    return;
+                }
+
                 this.updateStatus('connecting');
                 this.logMessage('正在连接...', 'info');
 
-                const wsUrl = `ws://localhost:8080/room/${this.room}/customer`;
+                // 动态获取WebSocket URL，支持本地开发和生产环境
+                const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+                const host = location.hostname === 'localhost' || location.hostname === '127.0.0.1' 
+                    ? 'localhost:8080' 
+                    : location.host;
+                const wsUrl = `${protocol}//${host}/room/${this.room}/customer`;
+                
+                this.logMessage(`连接地址: ${wsUrl}`, 'info');
                 this.websocket = new WebSocket(wsUrl);
 
                 this.websocket.onopen = () => {
                     this.updateStatus('connected');
                     this.logMessage('WebSocket 连接成功', 'success');
                     this.reconnectAttempts = 0;
+                    this.isManualReconnect = false;
+                    this.autoReconnectEnabled = true;
                 };
 
                 this.websocket.onclose = (event) => {
                     this.updateStatus('disconnected');
                     this.logMessage(`连接关闭 (代码: ${event.code})`, 'error');
                     
-                    if (this.reconnectAttempts < this.maxReconnectAttempts) {
-                        this.logMessage(`5秒后尝试重新连接... (${this.reconnectAttempts + 1}/${this.maxReconnectAttempts})`, 'info');
-                        setTimeout(() => this.reconnect(), 5000);
+                    // 只有在非手动重连且启用自动重连时才进行自动重连
+                    if (!this.isManualReconnect && this.autoReconnectEnabled && this.reconnectAttempts < this.maxReconnectAttempts) {
+                        this.reconnectAttempts++;
+                        this.logMessage(`5秒后尝试自动重新连接... (${this.reconnectAttempts}/${this.maxReconnectAttempts})`, 'info');
+                        setTimeout(() => this.autoReconnect(), 5000);
+                    } else if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+                        this.logMessage('已达到最大重连次数，请手动重新连接', 'error');
+                        this.autoReconnectEnabled = false;
                     }
                 };
 
@@ -450,17 +472,30 @@
                 };
             }
 
+            // 手动重连方法
             reconnect() {
-                this.reconnectAttempts++;
-                this.logMessage(`重新连接尝试 ${this.reconnectAttempts}/${this.maxReconnectAttempts}`, 'info');
+                this.isManualReconnect = true;
+                this.reconnectAttempts = 0; // 重置重连计数器
+                this.autoReconnectEnabled = true; // 重新启用自动重连
+                this.logMessage('手动重新连接...', 'info');
                 
-                if (this.websocket) {
+                // 如果有现有连接，先关闭
+                if (this.websocket && this.websocket.readyState !== WebSocket.CLOSED) {
                     this.websocket.close();
+                } else {
+                    // 直接连接
+                    this.connect();
+                }
+            }
+
+            // 自动重连方法
+            autoReconnect() {
+                if (!this.autoReconnectEnabled || this.isManualReconnect) {
+                    return;
                 }
                 
-                setTimeout(() => {
-                    this.connect();
-                }, 1000);
+                this.logMessage(`自动重新连接尝试 ${this.reconnectAttempts}/${this.maxReconnectAttempts}`, 'info');
+                this.connect();
             }
 
             displayQRCode(data) {

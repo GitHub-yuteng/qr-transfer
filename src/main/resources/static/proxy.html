@@ -104,11 +104,121 @@
             background: #fff3e0;
         }
 
+        .status.success {
+            border-left-color: #4CAF50;
+            background: #e8f5e8;
+        }
+
         .status-text {
             font-size: 14px;
             line-height: 1.5;
             white-space: pre-wrap;
             word-break: break-word;
+        }
+
+        .connection-details {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 10px;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .connection-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .connection-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #ccc;
+            animation: pulse 2s infinite;
+        }
+
+        .connection-dot.connected {
+            background: #4CAF50;
+        }
+
+        .connection-dot.connecting {
+            background: #ff9800;
+        }
+
+        .connection-dot.disconnected {
+            background: #f44336;
+        }
+
+        .connection-stats {
+            display: flex;
+            gap: 15px;
+            font-size: 11px;
+            color: #888;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .stat-label {
+            font-weight: 500;
+        }
+
+        .connection-quality {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .quality-bar {
+            width: 40px;
+            height: 4px;
+            background: #e0e0e0;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .quality-fill {
+            height: 100%;
+            background: #4CAF50;
+            transition: width 0.3s ease;
+        }
+
+        .quality-fill.good {
+            background: #4CAF50;
+        }
+
+        .quality-fill.warning {
+            background: #ff9800;
+        }
+
+        .quality-fill.poor {
+            background: #f44336;
+        }
+
+        .heartbeat-indicator {
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #4CAF50;
+            margin-right: 6px;
+            animation: heartbeat 1.5s ease-in-out infinite;
+        }
+
+        @keyframes heartbeat {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.2); opacity: 0.7; }
+        }
+
+        .connection-time {
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            color: #666;
         }
 
         .output {
@@ -195,6 +305,85 @@
             display: none;
         }
 
+        .room-input-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            border: 1px solid #e9ecef;
+            text-align: center;
+        }
+
+        .room-input-section h3 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .room-input-section p {
+            color: #6c757d;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .input-group input {
+            flex: 1;
+            min-width: 200px;
+            padding: 12px 16px;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.3s ease;
+            background: white;
+        }
+
+        .input-group input:focus {
+            border-color: #4CAF50;
+            box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
+        }
+
+        .input-group input::placeholder {
+            color: #adb5bd;
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            margin: 25px 0;
+            position: relative;
+        }
+
+        .divider::before {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: #e9ecef;
+        }
+
+        .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: #e9ecef;
+        }
+
+        .divider span {
+            padding: 0 15px;
+            color: #6c757d;
+            font-size: 14px;
+            background: white;
+        }
+
         @media (max-width: 640px) {
             .container {
                 padding: 20px;
@@ -213,12 +402,33 @@
                 width: 100%;
                 margin: 5px 0;
             }
+
+            .input-group {
+                flex-direction: column;
+            }
+
+            .input-group input {
+                min-width: auto;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <h1 class="title">二维码扫描器</h1>
+        
+        <!-- 聊天室代码输入区域 -->
+        <div id="roomInputSection" class="room-input-section">
+            <h3>输入聊天室代码</h3>
+            <p>请输入聊天室代码或扫描二维码加入聊天室</p>
+            <div class="input-group">
+                <input type="text" id="roomCodeInput" placeholder="请输入聊天室代码" maxlength="20">
+                <button id="connectRoom" class="button">连接聊天室</button>
+            </div>
+            <div class="divider">
+                <span>或者</span>
+            </div>
+        </div>
         
         <div id="permissionRequest" class="permission-request">
             <h3>需要摄像头权限</h3>
@@ -234,6 +444,31 @@
             
             <div class="status" id="connectionStatus">
                 <div class="status-text">正在连接...</div>
+                <div class="connection-details">
+                    <div class="connection-indicator">
+                        <div class="connection-dot connecting"></div>
+                        <span id="connectionState">连接中</span>
+                    </div>
+                    <div class="connection-stats">
+                        <div class="stat-item">
+                            <span class="stat-label">质量:</span>
+                            <div class="connection-quality">
+                                <div class="quality-bar">
+                                    <div class="quality-fill" id="qualityFill" style="width: 0%"></div>
+                                </div>
+                                <span id="qualityText">--</span>
+                            </div>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">延迟:</span>
+                            <span id="latencyText">--</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">连接时间:</span>
+                            <span class="connection-time" id="connectionTime">--</span>
+                        </div>
+                    </div>
+                </div>
             </div>
             
             <div class="output" id="output">
@@ -248,6 +483,7 @@
         <div class="button-group">
             <button id="switchCamera" class="button secondary hidden">切换摄像头</button>
             <button id="retryConnection" class="button secondary">重新连接</button>
+            <button id="backToInput" class="button secondary">返回输入</button>
         </div>
         
         <!-- 调试信息区域 -->
@@ -270,6 +506,12 @@
                 this.requestPermissionBtn = document.getElementById('requestPermission');
                 this.switchCameraBtn = document.getElementById('switchCamera');
                 this.retryConnectionBtn = document.getElementById('retryConnection');
+                this.backToInputBtn = document.getElementById('backToInput'); // 新增返回输入按钮
+                
+                // 新增聊天室输入相关元素
+                this.roomInputSection = document.getElementById('roomInputSection');
+                this.roomCodeInput = document.getElementById('roomCodeInput');
+                this.connectRoomBtn = document.getElementById('connectRoom');
                 
                 this.websocket = null;
                 this.stream = null;
@@ -277,6 +519,16 @@
                 this.scanInterval = 500;
                 this.isScanning = false;
                 this.currentFacingMode = 'environment';
+                
+                // 连接监测相关属性
+                this.connectionStartTime = null;
+                this.heartbeatInterval = null;
+                this.connectionMonitorInterval = null;
+                this.lastHeartbeatTime = null;
+                this.heartbeatTimeout = 10000; // 10秒心跳超时
+                this.reconnectAttempts = 0;
+                this.maxReconnectAttempts = 5;
+                this.reconnectDelay = 3000; // 3秒重连延迟
                 
                 // 检测移动设备
                 this.isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
@@ -288,12 +540,18 @@
                 console.log('QRScanner initializing...');
                 this.setupEventListeners();
                 
-                // 检查room参数但不立即禁用按钮
+                // 检查URL中的room参数
                 const hasRoom = this.checkRoomParameter();
                 const hasCamera = this.checkCameraSupport();
                 
                 console.log('Room parameter:', hasRoom);
                 console.log('Camera support:', hasCamera);
+                
+                // 如果URL中有room参数，自动填充到输入框并隐藏输入区域
+                if (hasRoom && this.roomCodeInput) {
+                    this.roomCodeInput.value = this.room;
+                    this.roomInputSection.classList.add('hidden');
+                }
                 
                 // 只有在两种检查都失败时才禁用按钮
                 if (!hasRoom && !hasCamera) {
@@ -303,6 +561,22 @@
 
             setupEventListeners() {
                 console.log('Setting up event listeners...');
+                
+                // 聊天室连接相关事件
+                if (this.connectRoomBtn) {
+                    this.connectRoomBtn.addEventListener('click', () => {
+                        console.log('Connect room button clicked');
+                        this.connectToRoom();
+                    });
+                }
+                
+                if (this.roomCodeInput) {
+                    this.roomCodeInput.addEventListener('keypress', (e) => {
+                        if (e.key === 'Enter') {
+                            this.connectToRoom();
+                        }
+                    });
+                }
                 
                 if (this.requestPermissionBtn) {
                     this.requestPermissionBtn.addEventListener('click', () => {
@@ -320,6 +594,37 @@
                 if (this.retryConnectionBtn) {
                     this.retryConnectionBtn.addEventListener('click', () => this.connectWebSocket());
                 }
+
+                if (this.backToInputBtn) {
+                    this.backToInputBtn.addEventListener('click', () => {
+                        console.log('Back to input button clicked');
+                        
+                        // 清理连接
+                        this.cleanupConnection();
+                        if (this.websocket) {
+                            this.websocket.close();
+                            this.websocket = null;
+                        }
+                        
+                        // 重置UI状态
+                        this.roomInputSection.classList.remove('hidden');
+                        this.permissionRequest.classList.add('hidden');
+                        this.cameraSection.classList.add('hidden');
+                        this.switchCameraBtn.classList.add('hidden');
+                        this.retryConnectionBtn.classList.remove('hidden');
+                        this.backToInputBtn.classList.add('hidden');
+                        
+                        // 重置连接状态显示
+                        this.updateConnectionStatus('请输入聊天室代码', 'status');
+                        this.updateConnectionState('disconnected');
+                        this.resetConnectionStats();
+                        
+                        this.output.textContent = '等待扫描二维码...';
+                        this.output.style.background = '#e8f5e8';
+                        this.output.style.borderColor = '#4CAF50';
+                        this.errorStatus.classList.add('hidden');
+                    });
+                }
                 
                 console.log('Event listeners setup complete');
             }
@@ -328,11 +633,51 @@
                 const params = new URLSearchParams(window.location.search);
                 const room = params.get("room");
                 if (!room) {
-                    this.showError("聊天室参数错误！请检查URL是否正确。");
                     return false;
                 }
                 this.room = room;
                 return true;
+            }
+
+            connectToRoom() {
+                const roomCode = this.roomCodeInput.value.trim();
+                
+                if (!roomCode) {
+                    this.showError("请输入聊天室代码");
+                    return;
+                }
+                
+                if (roomCode.length < 3) {
+                    this.showError("聊天室代码至少需要3个字符");
+                    return;
+                }
+                
+                // 设置聊天室代码
+                this.room = roomCode;
+                
+                // 更新按钮状态
+                this.connectRoomBtn.innerHTML = '<span class="loading"></span> 连接中...';
+                this.connectRoomBtn.disabled = true;
+                
+                // 隐藏错误信息
+                this.errorStatus.classList.add('hidden');
+                
+                // 重置连接状态显示
+                this.updateConnectionStatus('正在连接到聊天室...', 'status');
+                this.updateConnectionState('connecting');
+                this.resetConnectionStats();
+                
+                // 连接WebSocket
+                this.connectWebSocket();
+                
+                // 隐藏聊天室输入区域，显示摄像头区域
+                this.roomInputSection.classList.add('hidden');
+                this.permissionRequest.classList.remove('hidden');
+                
+                // 显示返回输入按钮
+                if (this.backToInputBtn) {
+                    this.backToInputBtn.classList.remove('hidden');
+                }
             }
 
             checkCameraSupport() {
@@ -354,8 +699,11 @@
             }
 
             async requestCameraPermission() {
-                // 检查room参数
-                if (!this.checkRoomParameter()) {
+                // 检查是否有聊天室代码
+                if (!this.room) {
+                    this.showError("请先输入聊天室代码");
+                    this.roomInputSection.classList.remove('hidden');
+                    this.permissionRequest.classList.add('hidden');
                     return;
                 }
                 
@@ -373,6 +721,11 @@
                     this.cameraSection.classList.remove('hidden');
                     this.switchCameraBtn.classList.remove('hidden');
                     this.connectWebSocket();
+                    
+                    // 隐藏返回输入按钮
+                    if (this.backToInputBtn) {
+                        this.backToInputBtn.classList.add('hidden');
+                    }
                 } catch (error) {
                     this.handleCameraError(error);
                 }
@@ -543,17 +896,32 @@
                 
                 if (this.websocket && this.websocket.readyState === WebSocket.OPEN) {
                     this.websocket.send(data);
+                    this.output.textContent = `✓ 已发送二维码数据: ${data}`;
+                    this.output.style.background = '#d4edda';
+                    this.output.style.borderColor = '#28a745';
+                } else {
+                    this.output.textContent = `✗ 连接断开，无法发送数据: ${data}`;
+                    this.output.style.background = '#f8d7da';
+                    this.output.style.borderColor = '#dc3545';
                 }
                 
                 // 3秒后恢复原样式
                 setTimeout(() => {
                     this.output.style.background = '#e8f5e8';
                     this.output.style.borderColor = '#4CAF50';
+                    this.output.textContent = '等待扫描二维码...';
                 }, 3000);
             }
 
             connectWebSocket() {
                 if (!this.room) return;
+                
+                // 清理之前的连接
+                this.cleanupConnection();
+                
+                // 重置连接状态
+                this.connectionStartTime = Date.now();
+                this.reconnectAttempts = 0;
                 
                 // 动态获取WebSocket URL，支持本地开发和生产环境
                 const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -566,33 +934,248 @@
                 
                 try {
                     this.websocket = new WebSocket(wsUrl);
-                    this.updateConnectionStatus('正在连接...', 'status');
+                    this.updateConnectionStatus('正在连接到聊天室...', 'status');
+                    this.updateConnectionState('connecting');
                     
                     this.websocket.onopen = () => {
-                        this.updateConnectionStatus('WebSocket连接成功', 'status');
+                        console.log('WebSocket connected successfully');
+                        this.connectionStartTime = Date.now();
+                        this.reconnectAttempts = 0;
+                        this.updateConnectionStatus('聊天室连接成功', 'success');
+                        this.updateConnectionState('connected');
+                        this.startHeartbeat();
+                        this.startConnectionMonitoring();
+                        
+                        // 恢复连接按钮状态
+                        if (this.connectRoomBtn) {
+                            this.connectRoomBtn.innerHTML = '连接聊天室';
+                            this.connectRoomBtn.disabled = false;
+                        }
                     };
                     
                     this.websocket.onclose = (event) => {
-                        this.updateConnectionStatus(`连接已关闭 (代码: ${event.code})`, 'warning');
-                        this.scheduleReconnect();
+                        console.log('WebSocket closed:', event.code, event.reason);
+                        this.cleanupConnection();
+                        
+                        let closeMessage = '连接已关闭';
+                        if (event.code === 1000) {
+                            closeMessage = '连接正常关闭';
+                        } else if (event.code === 1001) {
+                            closeMessage = '服务器正在关闭';
+                        } else if (event.code === 1002) {
+                            closeMessage = '协议错误';
+                        } else if (event.code === 1003) {
+                            closeMessage = '不支持的数据类型';
+                        } else if (event.code === 1006) {
+                            closeMessage = '连接异常断开';
+                        } else if (event.code === 1011) {
+                            closeMessage = '服务器内部错误';
+                        } else if (event.code === 1012) {
+                            closeMessage = '服务器重启中';
+                        } else if (event.code === 1013) {
+                            closeMessage = '临时错误，请稍后重试';
+                        } else if (event.code === 1015) {
+                            closeMessage = 'TLS握手失败';
+                        }
+                        
+                        this.updateConnectionStatus(`${closeMessage} (代码: ${event.code})`, 'warning');
+                        this.updateConnectionState('disconnected');
+                        
+                        // 自动重连
+                        if (this.reconnectAttempts < this.maxReconnectAttempts) {
+                            this.scheduleReconnect();
+                        } else {
+                            this.updateConnectionStatus('重连次数已达上限，请手动重试', 'error');
+                        }
                     };
                     
                     this.websocket.onerror = (event) => {
+                        console.error('WebSocket error:', event);
                         this.updateConnectionStatus('WebSocket连接错误', 'error');
+                        this.updateConnectionState('disconnected');
+                        
+                        // 恢复连接按钮状态
+                        if (this.connectRoomBtn) {
+                            this.connectRoomBtn.innerHTML = '连接聊天室';
+                            this.connectRoomBtn.disabled = false;
+                        }
+                    };
+                    
+                    this.websocket.onmessage = (event) => {
+                        console.log('Received message:', event.data);
+                        this.lastHeartbeatTime = Date.now();
+                        
+                        // 处理心跳响应
+                        if (event.data === 'pong') {
+                            this.updateLatency();
+                        }
                     };
                     
                 } catch (error) {
+                    console.error('WebSocket connection failed:', error);
                     this.updateConnectionStatus(`连接失败: ${error.message}`, 'error');
+                    this.updateConnectionState('disconnected');
+                    
+                    // 恢复连接按钮状态
+                    if (this.connectRoomBtn) {
+                        this.connectRoomBtn.innerHTML = '连接聊天室';
+                        this.connectRoomBtn.disabled = false;
+                    }
                 }
             }
 
             scheduleReconnect() {
+                this.reconnectAttempts++;
+                const delay = this.reconnectDelay * this.reconnectAttempts;
+                
+                this.updateConnectionStatus(`连接断开，${delay/1000}秒后尝试第${this.reconnectAttempts}次重连...`, 'warning');
+                
                 setTimeout(() => {
                     if (this.websocket && this.websocket.readyState === WebSocket.CLOSED) {
                         this.updateConnectionStatus('正在尝试重新连接...', 'warning');
                         this.connectWebSocket();
                     }
-                }, 3000);
+                }, delay);
+            }
+
+            startHeartbeat() {
+                if (this.heartbeatInterval) {
+                    clearInterval(this.heartbeatInterval);
+                }
+                
+                this.heartbeatInterval = setInterval(() => {
+                    if (this.websocket && this.websocket.readyState === WebSocket.OPEN) {
+                        const heartbeatTime = Date.now();
+                        this.websocket.send('ping');
+                        
+                        // 检查心跳超时
+                        setTimeout(() => {
+                            if (this.lastHeartbeatTime && (Date.now() - this.lastHeartbeatTime) > this.heartbeatTimeout) {
+                                console.warn('Heartbeat timeout detected');
+                                this.updateConnectionStatus('心跳超时，连接可能不稳定', 'warning');
+                            }
+                        }, this.heartbeatTimeout);
+                    }
+                }, 5000); // 每5秒发送一次心跳
+            }
+
+            startConnectionMonitoring() {
+                if (this.connectionMonitorInterval) {
+                    clearInterval(this.connectionMonitorInterval);
+                }
+                
+                this.connectionMonitorInterval = setInterval(() => {
+                    this.updateConnectionStats();
+                }, 1000); // 每秒更新一次连接统计
+            }
+
+            updateConnectionStats() {
+                // 更新连接时间
+                if (this.connectionStartTime) {
+                    const connectionDuration = Date.now() - this.connectionStartTime;
+                    const minutes = Math.floor(connectionDuration / 60000);
+                    const seconds = Math.floor((connectionDuration % 60000) / 1000);
+                    const timeText = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                    
+                    const connectionTimeElement = document.getElementById('connectionTime');
+                    if (connectionTimeElement) {
+                        connectionTimeElement.textContent = timeText;
+                    }
+                }
+                
+                // 更新连接质量
+                this.updateConnectionQuality();
+            }
+
+            updateConnectionQuality() {
+                const qualityFill = document.getElementById('qualityFill');
+                const qualityText = document.getElementById('qualityText');
+                
+                if (!qualityFill || !qualityText) return;
+                
+                // 基于心跳延迟和连接稳定性计算质量
+                let quality = 100;
+                let qualityClass = 'good';
+                let qualityLabel = '优秀';
+                
+                if (this.lastHeartbeatTime) {
+                    const latency = Date.now() - this.lastHeartbeatTime;
+                    if (latency > 1000) {
+                        quality = 30;
+                        qualityClass = 'poor';
+                        qualityLabel = '差';
+                    } else if (latency > 500) {
+                        quality = 60;
+                        qualityClass = 'warning';
+                        qualityLabel = '一般';
+                    }
+                }
+                
+                // 检查WebSocket状态
+                if (this.websocket && this.websocket.readyState !== WebSocket.OPEN) {
+                    quality = 0;
+                    qualityClass = 'poor';
+                    qualityLabel = '断开';
+                }
+                
+                qualityFill.style.width = `${quality}%`;
+                qualityFill.className = `quality-fill ${qualityClass}`;
+                qualityText.textContent = qualityLabel;
+            }
+
+            updateLatency() {
+                const latencyText = document.getElementById('latencyText');
+                if (latencyText && this.lastHeartbeatTime) {
+                    const latency = Date.now() - this.lastHeartbeatTime;
+                    latencyText.textContent = `${latency}ms`;
+                }
+            }
+
+            updateConnectionState(state) {
+                const connectionDot = document.querySelector('.connection-dot');
+                const connectionState = document.getElementById('connectionState');
+                
+                if (connectionDot) {
+                    connectionDot.className = `connection-dot ${state}`;
+                }
+                
+                if (connectionState) {
+                    const stateTexts = {
+                        'connecting': '连接中',
+                        'connected': '已连接',
+                        'disconnected': '已断开'
+                    };
+                    connectionState.textContent = stateTexts[state] || state;
+                }
+            }
+
+            resetConnectionStats() {
+                const qualityFill = document.getElementById('qualityFill');
+                const qualityText = document.getElementById('qualityText');
+                const latencyText = document.getElementById('latencyText');
+                const connectionTime = document.getElementById('connectionTime');
+                
+                if (qualityFill) {
+                    qualityFill.style.width = '0%';
+                    qualityFill.className = 'quality-fill';
+                }
+                if (qualityText) qualityText.textContent = '--';
+                if (latencyText) latencyText.textContent = '--';
+                if (connectionTime) connectionTime.textContent = '--';
+            }
+
+            cleanupConnection() {
+                if (this.heartbeatInterval) {
+                    clearInterval(this.heartbeatInterval);
+                    this.heartbeatInterval = null;
+                }
+                
+                if (this.connectionMonitorInterval) {
+                    clearInterval(this.connectionMonitorInterval);
+                    this.connectionMonitorInterval = null;
+                }
+                
+                this.lastHeartbeatTime = null;
             }
 
             updateConnectionStatus(message, type) {
@@ -608,6 +1191,8 @@
 
             destroy() {
                 this.isScanning = false;
+                this.cleanupConnection();
+                
                 if (this.stream) {
                     this.stream.getTracks().forEach(track => track.stop());
                 }
