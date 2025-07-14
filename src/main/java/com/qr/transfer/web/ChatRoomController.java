@@ -49,6 +49,16 @@ public class ChatRoomController {
         return ResponseEntity.ok(response);
     }
 
+
+    /**
+     * 解散聊天室
+     */
+    @GetMapping("/breakAll")
+    public ResponseEntity<String> breakAll() {
+        chatRoomService.breakAll();
+        return ResponseEntity.ok("所有聊天室已解散");
+    }
+
     /**
      * 查询聊天室列表
      */

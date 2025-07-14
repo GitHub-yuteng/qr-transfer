@@ -855,13 +855,14 @@
             autoRefreshInterval = setInterval(async () => {
                 try {
                     const response = await makeRequest('/chatroom/query');
-                    if (response && response.success && response.data) {
-                        displayRoomList(response.data);
+                    if (response && typeof response === 'object') {
+                        displayRoomList(response);
                     } else {
-                        displayRoomList([]);
+                        displayRoomList({});
                     }
                 } catch (error) {
-                    // 静默处理自动刷新错误
+                    console.error('Auto refresh error:', error);
+                    // 静默处理自动刷新错误，但保持现有显示
                 }
             }, 5000); // 每5秒刷新一次
         }

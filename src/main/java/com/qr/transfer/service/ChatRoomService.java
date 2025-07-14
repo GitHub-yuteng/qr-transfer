@@ -51,4 +51,8 @@ public class ChatRoomService {
     public Map<String, String> getAllRoom() {
         return roomDataMap;
     }
-} 
+
+    public void breakAll() {
+        roomDataMap.clear();
+    }
+}
