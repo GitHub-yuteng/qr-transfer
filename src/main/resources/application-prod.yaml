@@ -1,0 +1,6 @@
+server:
+  port: 8080
+  address: 0.0.0.0
+  # 服务器配置
+app:
+  base-url: http://139.129.27.112:8080

@@ -672,7 +672,7 @@
                 showLoading();
                 disableButtons();
                 
-                // 获取动态baseUrl
+                // 获取baseUrl
                 const configResponse = await fetch('/chatroom/config');
                 const config = await configResponse.json();
                 const baseUrl = config.baseUrl;
@@ -825,23 +825,31 @@
         
         // 添加复制链接功能
         async function copyLink(roomCode, type) {
-            const baseUrl = 'http://localhost:8080';
-            const url = type === 'proxy' 
-                ? `${baseUrl}/proxy.html?room=${roomCode}`
-                : `${baseUrl}/customer.html?room=${roomCode}`;
-            
             try {
-                await navigator.clipboard.writeText(url);
-                showNotification(`${type === 'proxy' ? '代理' : '客户'}链接已复制到剪贴板！`, 'success');
-            } catch (err) {
-                // 降级方案：创建一个临时输入框来复制
-                const tempInput = document.createElement('input');
-                tempInput.value = url;
-                document.body.appendChild(tempInput);
-                tempInput.select();
-                document.execCommand('copy');
-                document.body.removeChild(tempInput);
-                showNotification(`${type === 'proxy' ? '代理' : '客户'}链接已复制到剪贴板！`, 'success');
+                const configResponse = await fetch('/chatroom/config');
+                const config = await configResponse.json();
+                const baseUrl = config.baseUrl;
+                
+                const url = type === 'proxy' 
+                    ? `${baseUrl}/proxy.html?room=${roomCode}`
+                    : `${baseUrl}/customer.html?room=${roomCode}`;
+                
+                try {
+                    await navigator.clipboard.writeText(url);
+                    showNotification(`${type === 'proxy' ? '代理' : '客户'}链接已复制到剪贴板！`, 'success');
+                } catch (err) {
+                    // 降级方案：创建一个临时输入框来复制
+                    const tempInput = document.createElement('input');
+                    tempInput.value = url;
+                    document.body.appendChild(tempInput);
+                    tempInput.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(tempInput);
+                    showNotification(`${type === 'proxy' ? '代理' : '客户'}链接已复制到剪贴板！`, 'success');
+                }
+            } catch (error) {
+                console.error('获取配置失败:', error);
+                showNotification('复制链接失败，请重试', 'error');
             }
         }
         
