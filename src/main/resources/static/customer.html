@@ -117,12 +117,12 @@
             async pollData() {
                 try {
                     const response = await fetch(`/chatroom/data?code=${this.room}`);
-                    const result = await response.json();
+                    const data = await response.text();
                     
-                    if (result.success && result.data !== this.lastData) {
-                        this.lastData = result.data;
-                        if (result.data) {
-                            this.handleData(result.data);
+                    if (data !== this.lastData) {
+                        this.lastData = data;
+                        if (data) {
+                            this.handleData(data);
                         }
                     }
                 } catch (error) {
