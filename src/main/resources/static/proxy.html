@@ -37,7 +37,6 @@
             font-weight: 600;
             margin-bottom: 20px;
             color: #2c3e50;
-            /* 禁用文本选择，防止双击复制 */
             -webkit-user-select: none;
             -moz-user-select: none;
             -ms-user-select: none;
@@ -59,7 +58,6 @@
             display: block;
             border-radius: 15px;
             object-fit: cover;
-            /* 添加镜像效果 */
             transform: scaleX(-1);
         }
 
@@ -121,116 +119,10 @@
             line-height: 1.5;
             white-space: pre-wrap;
             word-break: break-word;
-            /* 禁用文本选择，防止双击复制 */
             -webkit-user-select: none;
             -moz-user-select: none;
             -ms-user-select: none;
             user-select: none;
-        }
-
-        .connection-details {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-top: 10px;
-            font-size: 12px;
-            color: #666;
-        }
-
-        .connection-indicator {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .connection-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #ccc;
-            animation: pulse 2s infinite;
-        }
-
-        .connection-dot.connected {
-            background: #4CAF50;
-        }
-
-        .connection-dot.connecting {
-            background: #ff9800;
-        }
-
-        .connection-dot.disconnected {
-            background: #f44336;
-        }
-
-        .connection-stats {
-            display: flex;
-            gap: 15px;
-            font-size: 11px;
-            color: #888;
-        }
-
-        .stat-item {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-
-        .stat-label {
-            font-weight: 500;
-        }
-
-        .connection-quality {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-
-        .quality-bar {
-            width: 40px;
-            height: 4px;
-            background: #e0e0e0;
-            border-radius: 2px;
-            overflow: hidden;
-        }
-
-        .quality-fill {
-            height: 100%;
-            background: #4CAF50;
-            transition: width 0.3s ease;
-        }
-
-        .quality-fill.good {
-            background: #4CAF50;
-        }
-
-        .quality-fill.warning {
-            background: #ff9800;
-        }
-
-        .quality-fill.poor {
-            background: #f44336;
-        }
-
-        .heartbeat-indicator {
-            display: inline-block;
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            background: #4CAF50;
-            margin-right: 6px;
-            animation: heartbeat 1.5s ease-in-out infinite;
-        }
-
-        @keyframes heartbeat {
-            0%, 100% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.2); opacity: 0.7; }
-        }
-
-        .connection-time {
-            font-family: 'Courier New', monospace;
-            font-size: 11px;
-            color: #666;
         }
 
         .output {
@@ -243,7 +135,6 @@
             font-size: 12px;
             word-break: break-all;
             min-height: 60px;
-            /* 禁用文本选择，防止双击复制 */
             -webkit-user-select: none;
             -moz-user-select: none;
             -ms-user-select: none;
@@ -262,12 +153,10 @@
             transition: all 0.3s ease;
             margin: 10px 5px;
             min-width: 120px;
-            /* 禁用文本选择，防止双击复制 */
             -webkit-user-select: none;
             -moz-user-select: none;
             -ms-user-select: none;
             user-select: none;
-            /* 禁用双击选择 */
             -webkit-touch-callout: none;
             -webkit-tap-highlight-color: transparent;
         }
@@ -304,7 +193,6 @@
         .permission-request h3 {
             color: #856404;
             margin-bottom: 10px;
-            /* 禁用文本选择，防止双击复制 */
             -webkit-user-select: none;
             -moz-user-select: none;
             -ms-user-select: none;
@@ -314,7 +202,6 @@
         .permission-request p {
             color: #856404;
             margin-bottom: 15px;
-            /* 禁用文本选择，防止双击复制 */
             -webkit-user-select: none;
             -moz-user-select: none;
             -ms-user-select: none;
@@ -380,7 +267,6 @@
             outline: none;
             transition: border-color 0.3s ease;
             background: white;
-            /* 禁用文本选择，防止双击复制 */
             -webkit-user-select: none;
             -moz-user-select: none;
             -ms-user-select: none;
@@ -496,33 +382,8 @@
                 <div class="camera-overlay"></div>
             </div>
             
-            <div class="status" id="connectionStatus">
-                <div class="status-text">正在连接...</div>
-                <div class="connection-details">
-                    <div class="connection-indicator">
-                        <div class="connection-dot connecting"></div>
-                        <span id="connectionState">连接中</span>
-                    </div>
-                    <div class="connection-stats">
-                        <div class="stat-item">
-                            <span class="stat-label">质量:</span>
-                            <div class="connection-quality">
-                                <div class="quality-bar">
-                                    <div class="quality-fill" id="qualityFill" style="width: 0%"></div>
-                                </div>
-                                <span id="qualityText">--</span>
-                            </div>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-label">延迟:</span>
-                            <span id="latencyText">--</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-label">连接时间:</span>
-                            <span class="connection-time" id="connectionTime">--</span>
-                        </div>
-                    </div>
-                </div>
+            <div class="status" id="scanStatus">
+                <div class="status-text">等待扫描二维码...</div>
             </div>
             
             <div class="output" id="output">
@@ -536,7 +397,6 @@
 
         <div class="button-group">
             <button id="switchCamera" class="button secondary hidden">切换摄像头</button>
-            <button id="retryConnection" class="button secondary">重新连接</button>
             <button id="backToInput" class="button secondary">返回输入</button>
         </div>
         
@@ -556,111 +416,12 @@
             }
         });
 
-        // 检查浏览器兼容性
-        function checkBrowserCompatibility() {
-            const compatibility = {
-                mediaDevices: !!navigator.mediaDevices,
-                getUserMedia: !!(navigator.mediaDevices && typeof navigator.mediaDevices.getUserMedia === 'function'),
-                enumerateDevices: !!(navigator.mediaDevices && typeof navigator.mediaDevices.enumerateDevices === 'function'),
-                webSocket: !!window.WebSocket,
-                canvas: !!document.createElement('canvas').getContext
-            };
-            
-            console.log('浏览器兼容性检查:', compatibility);
-            return compatibility;
-        }
-
-        // 页面加载时检查兼容性
-        document.addEventListener('DOMContentLoaded', function() {
-            checkBrowserCompatibility();
-        });
-
-        // 安全的getUserMedia调用
-        async function safeGetUserMedia(constraints) {
-            try {
-                if (!navigator.mediaDevices) {
-                    throw new Error('mediaDevices API 不可用');
-                }
-                
-                if (typeof navigator.mediaDevices.getUserMedia !== 'function') {
-                    throw new Error('getUserMedia API 不可用');
-                }
-                
-                return await navigator.mediaDevices.getUserMedia(constraints);
-            } catch (error) {
-                console.error('getUserMedia 调用失败:', error);
-                throw error;
-            }
-        }
-
-        // 简单的摄像头测试函数
-        async function testCameraSimple() {
-            const debugInfo = document.getElementById('debugInfo');
-            const debugText = document.getElementById('debugText');
-            
-            if (!debugInfo || !debugText) return;
-            
-            debugText.textContent = '正在测试摄像头...';
-            debugInfo.classList.remove('hidden');
-            
-            try {
-                // 检查API支持
-                if (!navigator.mediaDevices) {
-                    throw new Error('mediaDevices API 不可用');
-                }
-                
-                if (typeof navigator.mediaDevices.getUserMedia !== 'function') {
-                    throw new Error('getUserMedia API 不可用');
-                }
-                
-                // 尝试获取摄像头
-                const stream = await navigator.mediaDevices.getUserMedia({ 
-                    video: true, 
-                    audio: false 
-                });
-                
-                const videoTrack = stream.getVideoTracks()[0];
-                const settings = videoTrack.getSettings();
-                
-                const result = [
-                    '✓ 摄像头测试成功',
-                    `设备名称: ${videoTrack.label || '未命名'}`,
-                    `分辨率: ${settings.width}x${settings.height}`,
-                    `帧率: ${settings.frameRate || '未知'}fps`,
-                    `设备ID: ${videoTrack.id}`
-                ].join('\n');
-                
-                debugText.textContent = result;
-                
-                // 停止流
-                stream.getTracks().forEach(track => track.stop());
-                
-            } catch (error) {
-                const errorResult = [
-                    '✗ 摄像头测试失败',
-                    `错误: ${error.name}`,
-                    `消息: ${error.message}`,
-                    '',
-                    '可能的原因：',
-                    '1. 摄像头权限被拒绝',
-                    '2. 摄像头被其他应用占用',
-                    '3. 设备没有摄像头',
-                    '4. 浏览器不支持',
-                    '5. 安全环境问题'
-                ].join('\n');
-                
-                debugText.textContent = errorResult;
-            }
-        }
-
         class QRScanner {
             constructor() {
                 this.video = document.getElementById('videoElement');
                 
-                // 确保video元素存在并正确设置
                 if (this.video) {
                     console.log('Video element found:', this.video);
-                    // 设置video元素的基本属性
                     this.video.width = 400;
                     this.video.height = 300;
                     this.video.autoplay = true;
@@ -671,39 +432,25 @@
                 }
                 
                 this.output = document.getElementById('output');
-                this.connectionStatus = document.getElementById('connectionStatus');
+                this.scanStatus = document.getElementById('scanStatus');
                 this.errorStatus = document.getElementById('errorStatus');
                 this.errorText = document.getElementById('errorText');
                 this.permissionRequest = document.getElementById('permissionRequest');
                 this.cameraSection = document.getElementById('cameraSection');
                 this.requestPermissionBtn = document.getElementById('requestPermission');
                 this.switchCameraBtn = document.getElementById('switchCamera');
-                this.retryConnectionBtn = document.getElementById('retryConnection');
-                this.backToInputBtn = document.getElementById('backToInput'); // 新增返回输入按钮
+                this.backToInputBtn = document.getElementById('backToInput');
                 
-                // 新增聊天室输入相关元素
                 this.roomInputSection = document.getElementById('roomInputSection');
                 this.roomCodeInput = document.getElementById('roomCodeInput');
                 this.connectRoomBtn = document.getElementById('connectRoom');
                 
-                this.websocket = null;
                 this.stream = null;
                 this.lastTime = 0;
                 this.scanInterval = 500;
                 this.isScanning = false;
                 this.currentFacingMode = 'environment';
                 
-                // 连接监测相关属性
-                this.connectionStartTime = null;
-                this.heartbeatInterval = null;
-                this.connectionMonitorInterval = null;
-                this.lastHeartbeatTime = null;
-                this.heartbeatTimeout = 10000; // 10秒心跳超时
-                this.reconnectAttempts = 0;
-                this.maxReconnectAttempts = 5;
-                this.reconnectDelay = 3000; // 3秒重连延迟
-                
-                // 检测移动设备
                 this.isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
                 
                 this.init();
@@ -712,8 +459,7 @@
             init() {
                 console.log('QRScanner initializing...');
                 
-                // 检查浏览器兼容性
-                const compatibility = checkBrowserCompatibility();
+                const compatibility = this.checkBrowserCompatibility();
                 if (!compatibility.mediaDevices || !compatibility.getUserMedia) {
                     console.error('浏览器不支持摄像头API');
                     this.showError("您的浏览器不支持摄像头访问。请使用现代浏览器如Chrome、Firefox、Safari等。");
@@ -724,20 +470,14 @@
                 
                 this.setupEventListeners();
                 
-                // 检查URL中的room参数
                 const hasRoom = this.checkRoomParameter();
                 const hasCamera = this.checkCameraSupport();
                 
-                console.log('Room parameter:', hasRoom);
-                console.log('Camera support:', hasCamera);
-                
-                // 如果URL中有room参数，自动填充到输入框并隐藏输入区域
                 if (hasRoom && this.roomCodeInput) {
                     this.roomCodeInput.value = this.room;
                     this.roomInputSection.classList.add('hidden');
                 }
                 
-                // 在移动设备上显示提示
                 if (this.isMobile) {
                     const mobileTips = document.getElementById('mobileTips');
                     if (mobileTips) {
@@ -745,7 +485,6 @@
                     }
                 }
                 
-                // 只有在两种检查都失败时才禁用按钮
                 if (!hasRoom && !hasCamera) {
                     this.requestPermissionBtn.disabled = true;
                 }
@@ -754,7 +493,6 @@
             setupEventListeners() {
                 console.log('Setting up event listeners...');
                 
-                // 聊天室连接相关事件
                 if (this.connectRoomBtn) {
                     this.connectRoomBtn.addEventListener('click', () => {
                         console.log('Connect room button clicked');
@@ -775,27 +513,20 @@
                         console.log('Request permission button clicked');
                         this.requestCameraPermission();
                     });
-                } else {
-                    console.error('Request permission button not found');
                 }
                 
                 if (this.switchCameraBtn) {
                     this.switchCameraBtn.addEventListener('click', () => this.switchCamera());
-                }
-                
-                if (this.retryConnectionBtn) {
-                    this.retryConnectionBtn.addEventListener('click', () => this.connectWebSocket());
                 }
 
                 if (this.backToInputBtn) {
                     this.backToInputBtn.addEventListener('click', () => {
                         console.log('Back to input button clicked');
                         
-                        // 清理连接
-                        this.cleanupConnection();
-                        if (this.websocket) {
-                            this.websocket.close();
-                            this.websocket = null;
+                        // 停止扫描
+                        this.isScanning = false;
+                        if (this.stream) {
+                            this.stream.getTracks().forEach(track => track.stop());
                         }
                         
                         // 重置UI状态
@@ -803,22 +534,24 @@
                         this.permissionRequest.classList.add('hidden');
                         this.cameraSection.classList.add('hidden');
                         this.switchCameraBtn.classList.add('hidden');
-                        this.retryConnectionBtn.classList.remove('hidden');
                         this.backToInputBtn.classList.add('hidden');
                         
-                        // 重置连接状态显示
-                        this.updateConnectionStatus('请输入聊天室代码', 'status');
-                        this.updateConnectionState('disconnected');
-                        this.resetConnectionStats();
-                        
+                        this.updateScanStatus('等待扫描二维码...');
                         this.output.textContent = '等待扫描二维码...';
                         this.output.style.background = '#e8f5e8';
                         this.output.style.borderColor = '#4CAF50';
                         this.errorStatus.classList.add('hidden');
                     });
                 }
-                
-                console.log('Event listeners setup complete');
+            }
+
+            checkBrowserCompatibility() {
+                return {
+                    mediaDevices: !!navigator.mediaDevices,
+                    getUserMedia: !!(navigator.mediaDevices && typeof navigator.mediaDevices.getUserMedia === 'function'),
+                    enumerateDevices: !!(navigator.mediaDevices && typeof navigator.mediaDevices.enumerateDevices === 'function'),
+                    canvas: !!document.createElement('canvas').getContext
+                };
             }
 
             checkRoomParameter() {
@@ -831,7 +564,73 @@
                 return true;
             }
 
-            connectToRoom() {
+            async sendQRData(data) {
+                if (!this.room) {
+                    console.error('No room code available');
+                    return;
+                }
+
+                try {
+                    const response = await fetch('/chatroom/data', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                        },
+                        body: `code=${encodeURIComponent(this.room)}&data=${encodeURIComponent(data)}`
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+                    }
+
+                    const result = await response.json();
+                    if (!result.success) {
+                        console.error('发送数据失败:', result.message);
+                        this.showError(result.message || '发送数据失败');
+                    }
+                } catch (error) {
+                    console.error('发送数据时出错:', error);
+                    if (error.message.includes('404')) {
+                        this.showError('聊天室可能已经解散，请返回重新创建');
+                        // 自动返回输入界面
+                        if (this.backToInputBtn) {
+                            this.backToInputBtn.click();
+                        }
+                    } else {
+                        this.showError('网络错误，请重试');
+                    }
+                }
+            }
+
+            async checkRoomExists() {
+                try {
+                    const response = await fetch(`/chatroom/exists?code=${this.room}`);
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+                    }
+                    
+                    const data = await response.json();
+                    
+                    if (data.exists) {
+                        this.updateScanStatus('已连接到聊天室');
+                        return true;
+                    } else {
+                        this.showError('聊天室不存在或已解散');
+                        return false;
+                    }
+                } catch (error) {
+                    console.error('检查聊天室失败:', error);
+                    if (error.message.includes('404')) {
+                        this.showError('聊天室服务不可用，请稍后重试');
+                    } else {
+                        this.showError('检查聊天室失败，请重试');
+                    }
+                    return false;
+                }
+            }
+
+            async connectToRoom() {
                 const roomCode = this.roomCodeInput.value.trim();
                 
                 if (!roomCode) {
@@ -844,40 +643,32 @@
                     return;
                 }
                 
-                // 设置聊天室代码
                 this.room = roomCode;
                 
-                // 更新按钮状态
                 this.connectRoomBtn.innerHTML = '<span class="loading"></span> 连接中...';
                 this.connectRoomBtn.disabled = true;
                 
-                // 隐藏错误信息
                 this.errorStatus.classList.add('hidden');
                 
-                // 重置连接状态显示
-                this.updateConnectionStatus('正在连接到聊天室...', 'status');
-                this.updateConnectionState('connecting');
-                this.resetConnectionStats();
+                const exists = await this.checkRoomExists();
                 
-                // 连接WebSocket
-                this.connectWebSocket();
-                
-                // 隐藏聊天室输入区域，显示摄像头区域
-                this.roomInputSection.classList.add('hidden');
-                this.permissionRequest.classList.remove('hidden');
-                
-                // 显示返回输入按钮
-                if (this.backToInputBtn) {
-                    this.backToInputBtn.classList.remove('hidden');
+                if (exists) {
+                    this.roomInputSection.classList.add('hidden');
+                    this.permissionRequest.classList.remove('hidden');
+                    
+                    if (this.backToInputBtn) {
+                        this.backToInputBtn.classList.remove('hidden');
+                    }
+                    
+                    await this.requestCameraPermission();
+                } else {
+                    this.connectRoomBtn.innerHTML = '连接聊天室';
+                    this.connectRoomBtn.disabled = false;
                 }
             }
 
             checkCameraSupport() {
-                // 兼容性检查已在init中完成，这里只检查安全环境
-                
-                // 移动设备特殊检查
                 if (this.isMobile) {
-                    // 检查是否在安全环境下（HTTPS或本地IP地址）
                     const isLocalIP = this.isLocalIPAddress(location.hostname);
                     const isLocalhost = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
                     const isHTTPS = location.protocol === 'https:';
@@ -891,26 +682,23 @@
                 return true;
             }
 
-            // 新增：检查是否为本地IP地址
             isLocalIPAddress(hostname) {
-                // 检查是否为私有IP地址范围
                 const localIPPatterns = [
-                    /^10\./,           // 10.0.0.0/8
-                    /^172\.(1[6-9]|2[0-9]|3[0-1])\./, // 172.16.0.0/12
-                    /^192\.168\./,     // 192.168.0.0/16
-                    /^169\.254\./,     // 169.254.0.0/16 (链路本地地址)
-                    /^127\./,          // 127.0.0.0/8 (回环地址)
-                    /^::1$/,           // IPv6 回环地址
-                    /^fe80:/,          // IPv6 链路本地地址
-                    /^fc00:/,          // IPv6 唯一本地地址
-                    /^fd00:/           // IPv6 唯一本地地址
+                    /^10\./,
+                    /^172\.(1[6-9]|2[0-9]|3[0-1])\./,
+                    /^192\.168\./,
+                    /^169\.254\./,
+                    /^127\./,
+                    /^::1$/,
+                    /^fe80:/,
+                    /^fc00:/,
+                    /^fd00:/
                 ];
                 
                 return localIPPatterns.some(pattern => pattern.test(hostname));
             }
 
             async requestCameraPermission() {
-                // 检查是否有聊天室代码
                 if (!this.room) {
                     this.showError("请先输入聊天室代码");
                     this.roomInputSection.classList.remove('hidden');
@@ -918,7 +706,6 @@
                     return;
                 }
                 
-                // 检查摄像头支持
                 if (!this.checkCameraSupport()) {
                     return;
                 }
@@ -927,15 +714,12 @@
                 this.requestPermissionBtn.disabled = true;
 
                 try {
-                    // 先尝试获取摄像头权限
                     await this.requestCameraAccess();
                     await this.startCamera();
                     this.permissionRequest.classList.add('hidden');
                     this.cameraSection.classList.remove('hidden');
                     this.switchCameraBtn.classList.remove('hidden');
-                    this.connectWebSocket();
                     
-                    // 隐藏返回输入按钮
                     if (this.backToInputBtn) {
                         this.backToInputBtn.classList.add('hidden');
                     }
@@ -944,15 +728,12 @@
                 }
             }
 
-            // 新增：专门请求摄像头访问权限
             async requestCameraAccess() {
                 try {
-                    // 先尝试获取摄像头权限，不设置视频流
-                    const stream = await safeGetUserMedia({ 
+                    const stream = await navigator.mediaDevices.getUserMedia({ 
                         video: true, 
                         audio: false 
                     });
-                    // 立即停止流，只是为了获取权限
                     stream.getTracks().forEach(track => track.stop());
                     return true;
                 } catch (error) {
@@ -963,55 +744,34 @@
             async startCamera() {
                 console.log('Starting camera...');
                 
-                // 确保video元素存在
                 if (!this.video) {
                     console.error('Video element not found');
                     throw new Error('Video element not found');
                 }
                 
-                // 为移动设备使用更宽松的约束
                 const constraints = {
                     video: {
                         facingMode: this.currentFacingMode,
-                        // 移动设备使用更小的分辨率
                         width: { ideal: this.isMobile ? 640 : 1280, max: this.isMobile ? 1280 : 1920 },
                         height: { ideal: this.isMobile ? 480 : 720, max: this.isMobile ? 720 : 1080 }
                     },
                     audio: false
                 };
 
-                console.log('Camera constraints:', constraints);
-
                 try {
-                    this.stream = await safeGetUserMedia(constraints);
-                    console.log('Stream obtained:', this.stream);
-                    
-                    // 设置视频源
+                    this.stream = await navigator.mediaDevices.getUserMedia(constraints);
                     this.video.srcObject = this.stream;
                     
-                    // 等待视频加载
                     await new Promise((resolve, reject) => {
-                        this.video.onloadedmetadata = () => {
-                            console.log('Video metadata loaded');
-                            resolve();
-                        };
-                        this.video.onerror = (error) => {
-                            console.error('Video error:', error);
-                            reject(error);
-                        };
-                        // 设置超时
+                        this.video.onloadedmetadata = resolve;
+                        this.video.onerror = reject;
                         setTimeout(() => reject(new Error('Video loading timeout')), 10000);
                     });
                     
-                    // 播放视频
                     await this.video.play();
-                    console.log('Video started playing');
-                    
                     this.startScanning();
                 } catch (error) {
                     console.error('First camera attempt failed:', error);
-                    // 如果第一次失败，尝试更宽松的约束
-                    console.log('Trying with minimal constraints');
                     try {
                         const fallbackConstraints = {
                             video: {
@@ -1020,16 +780,11 @@
                             audio: false
                         };
                         
-                        this.stream = await safeGetUserMedia(fallbackConstraints);
-                        console.log('Fallback stream obtained:', this.stream);
-                        
+                        this.stream = await navigator.mediaDevices.getUserMedia(fallbackConstraints);
                         this.video.srcObject = this.stream;
                         await this.video.play();
-                        console.log('Fallback video started playing');
-                        
                         this.startScanning();
                     } catch (fallbackError) {
-                        console.error('Fallback camera attempt failed:', fallbackError);
                         throw fallbackError;
                     }
                 }
@@ -1059,34 +814,25 @@
                 let showRetry = true;
                 
                 if (error.name === 'NotAllowedError') {
-                    if (this.isMobile) {
-                        errorMessage = '摄像头权限被拒绝。\n\n解决方案：\n1. 点击浏览器地址栏左侧的锁定图标\n2. 允许摄像头访问\n3. 刷新页面重试\n\n或者：\n- 在浏览器设置中允许此网站的摄像头权限\n- 确保在安全环境下访问（HTTPS或本地网络）';
-                    } else {
-                        errorMessage = '摄像头权限被拒绝。请在浏览器设置中允许摄像头访问，然后刷新页面。';
-                    }
+                    errorMessage = this.isMobile
+                        ? '摄像头权限被拒绝。\n\n解决方案：\n1. 点击浏览器地址栏左侧的锁定图标\n2. 允许摄像头访问\n3. 刷新页面重试\n\n或者：\n- 在浏览器设置中允许此网站的摄像头权限\n- 确保在安全环境下访问（HTTPS或本地网络）'
+                        : '摄像头权限被拒绝。请在浏览器设置中允许摄像头访问，然后刷新页面。';
                 } else if (error.name === 'NotFoundError') {
                     errorMessage = '未找到摄像头设备。请确保您的设备有可用的摄像头。';
                 } else if (error.name === 'NotReadableError') {
                     errorMessage = '摄像头被其他应用程序占用。请关闭其他使用摄像头的应用后重试。';
                 } else if (error.name === 'OverconstrainedError') {
                     errorMessage = '摄像头不支持请求的分辨率。正在尝试其他设置...';
-                    // 尝试降低分辨率
                     this.tryLowerResolution();
                     return;
                 } else if (error.name === 'NotSupportedError') {
                     errorMessage = '您的浏览器不支持摄像头访问。请使用Chrome、Firefox、Safari等现代浏览器。';
                     showRetry = false;
                 } else if (error.name === 'SecurityError') {
-                    if (this.isMobile) {
-                        errorMessage = '安全错误：移动设备访问摄像头需要安全环境。\n\n解决方案：\n1. 使用HTTPS访问此页面\n2. 或使用localhost访问\n3. 或确保在本地网络环境中访问（如192.168.x.x）\n4. 检查浏览器安全设置';
-                    } else {
-                        errorMessage = '安全错误：摄像头访问被阻止。请检查浏览器安全设置。';
-                    }
+                    errorMessage = this.isMobile
+                        ? '安全错误：移动设备访问摄像头需要安全环境。\n\n解决方案：\n1. 使用HTTPS访问此页面\n2. 或使用localhost访问\n3. 或确保在本地网络环境中访问（如192.168.x.x）\n4. 检查浏览器安全设置'
+                        : '安全错误：摄像头访问被阻止。请检查浏览器安全设置。';
                     showRetry = false;
-                } else if (error.name === 'AbortError') {
-                    errorMessage = '摄像头访问被用户取消。请重新尝试。';
-                } else if (error.name === 'NotReadableError') {
-                    errorMessage = '摄像头被其他应用程序占用。请关闭其他使用摄像头的应用后重试。';
                 } else {
                     errorMessage = `摄像头错误: ${error.message || error.name}\n\n请检查：\n1. 摄像头是否被其他应用占用\n2. 浏览器权限设置\n3. 设备摄像头是否正常工作`;
                 }
@@ -1112,7 +858,7 @@
                         audio: false
                     };
                     
-                    this.stream = await safeGetUserMedia(constraints);
+                    this.stream = await navigator.mediaDevices.getUserMedia(constraints);
                     this.video.srcObject = this.stream;
                     await this.video.play();
                     this.startScanning();
@@ -1165,18 +911,20 @@
                 this.output.style.background = '#d4edda';
                 this.output.style.borderColor = '#28a745';
                 
-                if (this.websocket && this.websocket.readyState === WebSocket.OPEN) {
-                    this.websocket.send(data);
+                this.sendQRData(data).then(() => {
                     this.output.textContent = `✓ 已发送二维码数据: ${data}`;
                     this.output.style.background = '#d4edda';
                     this.output.style.borderColor = '#28a745';
-                } else {
-                    this.output.textContent = `✗ 连接断开，无法发送数据: ${data}`;
+                }).catch((error) => {
+                    if (error.message.includes('404')) {
+                        this.output.textContent = `聊天室已解散，请返回重新创建`;
+                    } else {
+                        this.output.textContent = `✗ 发送数据失败: ${data}`;
+                    }
                     this.output.style.background = '#f8d7da';
                     this.output.style.borderColor = '#dc3545';
-                }
+                });
                 
-                // 3秒后恢复原样式
                 setTimeout(() => {
                     this.output.style.background = '#e8f5e8';
                     this.output.style.borderColor = '#4CAF50';
@@ -1184,338 +932,9 @@
                 }, 3000);
             }
 
-            connectWebSocket() {
-                if (!this.room) return;
-                
-                // 清理之前的连接
-                this.cleanupConnection();
-                
-                // 重置连接状态
-                this.connectionStartTime = Date.now();
-                this.reconnectAttempts = 0;
-                
-                // 动态获取WebSocket URL
-                const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
-                const host = location.hostname === 'localhost' || location.hostname === '127.0.0.1' 
-                    ? 'localhost:8080' 
-                    : location.host;
-                const wsUrl = `${protocol}//${host}/room/${this.room}/proxy`;
-                
-                console.log('Connecting to WebSocket:', wsUrl);
-                
-                try {
-                    // 先检查是否已有连接
-                    if (this.websocket) {
-                        console.log('Closing existing WebSocket connection');
-                        this.websocket.close();
-                        this.websocket = null;
-                    }
-                    
-                    this.websocket = new WebSocket(wsUrl);
-                    this.updateConnectionStatus('正在连接到聊天室...', 'status');
-                    this.updateConnectionState('connecting');
-                    
-                    // 设置连接超时
-                    const connectionTimeout = setTimeout(() => {
-                        if (this.websocket && this.websocket.readyState === WebSocket.CONNECTING) {
-                            console.warn('WebSocket connection timeout');
-                            this.websocket.close();
-                            this.updateConnectionStatus('连接超时，请重试', 'error');
-                            this.updateConnectionState('disconnected');
-                        }
-                    }, 10000); // 10秒连接超时
-                    
-                    this.websocket.onopen = () => {
-                        clearTimeout(connectionTimeout);
-                        console.log('WebSocket connected successfully');
-                        this.connectionStartTime = Date.now();
-                        this.lastHeartbeatTime = Date.now();
-                        this.reconnectAttempts = 0;
-                        this.updateConnectionStatus('聊天室连接成功', 'success');
-                        this.updateConnectionState('connected');
-                        this.startHeartbeat();
-                        this.startConnectionMonitoring();
-                        
-                        // 立即发送一次心跳以确认连接
-                        this.websocket.send('ping');
-                        
-                        // 恢复连接按钮状态
-                        if (this.connectRoomBtn) {
-                            this.connectRoomBtn.innerHTML = '连接聊天室';
-                            this.connectRoomBtn.disabled = false;
-                        }
-                    };
-                    
-                    this.websocket.onclose = (event) => {
-                        console.log('WebSocket closed:', event.code, event.reason);
-                        this.cleanupConnection();
-                        
-                        let closeMessage = '连接已关闭';
-                        if (event.code === 1000) {
-                            closeMessage = '连接正常关闭';
-                        } else if (event.code === 1001) {
-                            closeMessage = '服务器正在关闭';
-                        } else if (event.code === 1002) {
-                            closeMessage = '协议错误';
-                        } else if (event.code === 1003) {
-                            closeMessage = '不支持的数据类型';
-                        } else if (event.code === 1006) {
-                            closeMessage = '连接异常断开';
-                        } else if (event.code === 1011) {
-                            closeMessage = '服务器内部错误';
-                        } else if (event.code === 1012) {
-                            closeMessage = '服务器重启中';
-                        } else if (event.code === 1013) {
-                            closeMessage = '临时错误，请稍后重试';
-                        } else if (event.code === 1015) {
-                            closeMessage = 'TLS握手失败';
-                        }
-                        
-                        this.updateConnectionStatus(`${closeMessage} (代码: ${event.code})`, 'warning');
-                        this.updateConnectionState('disconnected');
-                        
-                        // 自动重连
-                        if (this.reconnectAttempts < this.maxReconnectAttempts) {
-                            this.scheduleReconnect();
-                        } else {
-                            this.updateConnectionStatus('重连次数已达上限，请手动重试', 'error');
-                        }
-                    };
-                    
-                    this.websocket.onerror = (event) => {
-                        console.error('WebSocket error:', event);
-                        this.updateConnectionStatus('WebSocket连接错误', 'error');
-                        this.updateConnectionState('disconnected');
-                        
-                        // 恢复连接按钮状态
-                        if (this.connectRoomBtn) {
-                            this.connectRoomBtn.innerHTML = '连接聊天室';
-                            this.connectRoomBtn.disabled = false;
-                        }
-                    };
-                    
-                    this.websocket.onmessage = (event) => {
-                        console.log('Received message:', event.data);
-                        
-                        // 处理心跳响应
-                        if (event.data === 'pong') {
-                            this.lastHeartbeatTime = Date.now();
-                            this.updateLatency();
-                            // 确保连接状态为已连接
-                            this.updateConnectionState('connected');
-                            return;
-                        }
-                        
-                        // 其他消息的处理
-                        try {
-                            // 尝试解析消息
-                            const message = JSON.parse(event.data);
-                            if (message.type === 'status') {
-                                this.updateConnectionStatus(message.content, message.status);
-                            }
-                        } catch (e) {
-                            // 如果不是JSON，按普通消息处理
-                            console.log('Received non-JSON message:', event.data);
-                        }
-                    };
-                    
-                } catch (error) {
-                    console.error('WebSocket connection failed:', error);
-                    this.updateConnectionStatus(`连接失败: ${error.message}`, 'error');
-                    this.updateConnectionState('disconnected');
-                    
-                    // 恢复连接按钮状态
-                    if (this.connectRoomBtn) {
-                        this.connectRoomBtn.innerHTML = '连接聊天室';
-                        this.connectRoomBtn.disabled = false;
-                    }
-                }
-            }
-
-            scheduleReconnect() {
-                this.reconnectAttempts++;
-                const delay = this.reconnectDelay * this.reconnectAttempts;
-                
-                this.updateConnectionStatus(`连接断开，${delay/1000}秒后尝试第${this.reconnectAttempts}次重连...`, 'warning');
-                
-                setTimeout(() => {
-                    if (this.websocket && this.websocket.readyState === WebSocket.CLOSED) {
-                        this.updateConnectionStatus('正在尝试重新连接...', 'warning');
-                        this.connectWebSocket();
-                    }
-                }, delay);
-            }
-
-            startHeartbeat() {
-                if (this.heartbeatInterval) {
-                    clearInterval(this.heartbeatInterval);
-                }
-                
-                // 初始化最后心跳时间
-                this.lastHeartbeatTime = Date.now();
-                
-                this.heartbeatInterval = setInterval(() => {
-                    if (this.websocket && this.websocket.readyState === WebSocket.OPEN) {
-                        console.log('Sending heartbeat ping');
-                        this.websocket.send('ping');
-                        
-                        // 检查心跳超时
-                        if (this.lastHeartbeatTime && (Date.now() - this.lastHeartbeatTime) > this.heartbeatTimeout) {
-                            console.warn('Heartbeat timeout detected');
-                            this.updateConnectionStatus('心跳超时，连接可能不稳定', 'warning');
-                            this.updateConnectionState('connecting');
-                            
-                            // 尝试重新建立连接
-                            if (this.reconnectAttempts < this.maxReconnectAttempts) {
-                                this.connectWebSocket();
-                            }
-                        }
-                    } else {
-                        console.warn('WebSocket not open during heartbeat');
-                        this.updateConnectionState('disconnected');
-                    }
-                }, 5000); // 每5秒发送一次心跳
-            }
-
-            startConnectionMonitoring() {
-                if (this.connectionMonitorInterval) {
-                    clearInterval(this.connectionMonitorInterval);
-                }
-                
-                this.connectionMonitorInterval = setInterval(() => {
-                    this.updateConnectionStats();
-                }, 1000); // 每秒更新一次连接统计
-            }
-
-            updateConnectionStats() {
-                // 更新连接时间
-                if (this.connectionStartTime) {
-                    const connectionDuration = Date.now() - this.connectionStartTime;
-                    const minutes = Math.floor(connectionDuration / 60000);
-                    const seconds = Math.floor((connectionDuration % 60000) / 1000);
-                    const timeText = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-                    
-                    const connectionTimeElement = document.getElementById('connectionTime');
-                    if (connectionTimeElement) {
-                        connectionTimeElement.textContent = timeText;
-                    }
-                }
-                
-                // 更新连接质量
-                this.updateConnectionQuality();
-            }
-
-            updateConnectionQuality() {
-                const qualityFill = document.getElementById('qualityFill');
-                const qualityText = document.getElementById('qualityText');
-                
-                if (!qualityFill || !qualityText) return;
-                
-                // 检查WebSocket连接状态
-                if (!this.websocket || this.websocket.readyState !== WebSocket.OPEN) {
-                    qualityFill.style.width = '0%';
-                    qualityFill.className = 'quality-fill poor';
-                    qualityText.textContent = '未连接';
-                    return;
-                }
-                
-                // 基于心跳延迟和连接稳定性计算质量
-                let quality = 100;
-                let qualityClass = 'good';
-                let qualityLabel = '优秀';
-                
-                if (this.lastHeartbeatTime) {
-                    const latency = Date.now() - this.lastHeartbeatTime;
-                    console.log('Current latency:', latency); // 添加延迟日志
-                    
-                    if (latency > this.heartbeatTimeout) {
-                        quality = 0;
-                        qualityClass = 'poor';
-                        qualityLabel = '断开';
-                    } else if (latency > 1000) {
-                        quality = 30;
-                        qualityClass = 'poor';
-                        qualityLabel = '差';
-                    } else if (latency > 500) {
-                        quality = 60;
-                        qualityClass = 'warning';
-                        qualityLabel = '一般';
-                    }
-                }
-                
-                qualityFill.style.width = `${quality}%`;
-                qualityFill.className = `quality-fill ${qualityClass}`;
-                qualityText.textContent = qualityLabel;
-                
-                // 更新连接状态点
-                const connectionDot = document.querySelector('.connection-dot');
-                if (connectionDot) {
-                    connectionDot.className = `connection-dot ${quality > 0 ? 'connected' : 'disconnected'}`;
-                }
-            }
-
-            updateLatency() {
-                const latencyText = document.getElementById('latencyText');
-                if (latencyText && this.lastHeartbeatTime) {
-                    const latency = Date.now() - this.lastHeartbeatTime;
-                    latencyText.textContent = `${latency}ms`;
-                }
-            }
-
-            updateConnectionState(state) {
-                console.log('Updating connection state:', state); // 添加日志
-                const connectionDot = document.querySelector('.connection-dot');
-                const connectionState = document.getElementById('connectionState');
-                
-                if (connectionDot) {
-                    connectionDot.className = `connection-dot ${state}`;
-                }
-                
-                if (connectionState) {
-                    const stateTexts = {
-                        'connecting': '连接中',
-                        'connected': '已连接',
-                        'disconnected': '已断开'
-                    };
-                    connectionState.textContent = stateTexts[state] || state;
-                }
-                
-                // 更新连接质量显示
-                this.updateConnectionQuality();
-            }
-
-            resetConnectionStats() {
-                const qualityFill = document.getElementById('qualityFill');
-                const qualityText = document.getElementById('qualityText');
-                const latencyText = document.getElementById('latencyText');
-                const connectionTime = document.getElementById('connectionTime');
-                
-                if (qualityFill) {
-                    qualityFill.style.width = '0%';
-                    qualityFill.className = 'quality-fill';
-                }
-                if (qualityText) qualityText.textContent = '--';
-                if (latencyText) latencyText.textContent = '--';
-                if (connectionTime) connectionTime.textContent = '--';
-            }
-
-            cleanupConnection() {
-                if (this.heartbeatInterval) {
-                    clearInterval(this.heartbeatInterval);
-                    this.heartbeatInterval = null;
-                }
-                
-                if (this.connectionMonitorInterval) {
-                    clearInterval(this.connectionMonitorInterval);
-                    this.connectionMonitorInterval = null;
-                }
-                
-                this.lastHeartbeatTime = null;
-            }
-
-            updateConnectionStatus(message, type) {
-                this.connectionStatus.className = `status ${type}`;
-                this.connectionStatus.querySelector('.status-text').textContent = message;
+            updateScanStatus(message, type = 'status') {
+                this.scanStatus.className = `status ${type}`;
+                this.scanStatus.querySelector('.status-text').textContent = message;
             }
 
             showError(message) {
@@ -1526,13 +945,8 @@
 
             destroy() {
                 this.isScanning = false;
-                this.cleanupConnection();
-                
                 if (this.stream) {
                     this.stream.getTracks().forEach(track => track.stop());
-                }
-                if (this.websocket) {
-                    this.websocket.close();
                 }
             }
         }
@@ -1568,189 +982,42 @@
         // 页面加载时检查HTTPS
         checkHTTPS();
 
-        // 添加调试功能
-        function showDebugInfo() {
-            const debugInfo = document.getElementById('debugInfo');
-            const debugText = document.getElementById('debugText');
-            
-            if (debugInfo && debugText) {
-                const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-                const isLocalIP = scanner.isLocalIPAddress ? scanner.isLocalIPAddress(location.hostname) : false;
-                const isLocalhost = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
-                const isHTTPS = location.protocol === 'https:';
-                
-                const info = [
-                    `浏览器: ${navigator.userAgent}`,
-                    `协议: ${location.protocol}`,
-                    `主机: ${location.hostname}:${location.port}`,
-                    `完整URL: ${location.href}`,
-                    `HTTPS: ${isHTTPS}`,
-                    `本地主机: ${isLocalhost}`,
-                    `本地IP: ${isLocalIP}`,
-                    `移动设备: ${isMobile}`,
-                    `安全环境: ${isHTTPS || isLocalhost || isLocalIP}`,
-                    `Room参数: ${new URLSearchParams(window.location.search).get('room') || '未设置'}`,
-                    `摄像头支持: ${navigator.mediaDevices && typeof navigator.mediaDevices.getUserMedia === 'function' ? '是' : '否'}`,
-                    `按钮状态: ${document.getElementById('requestPermission') ? '找到' : '未找到'}`,
-                    `getUserMedia支持: ${navigator.mediaDevices && typeof navigator.mediaDevices.getUserMedia === 'function' ? '是' : '否'}`,
-                    `enumerateDevices支持: ${navigator.mediaDevices && typeof navigator.mediaDevices.enumerateDevices === 'function' ? '是' : '否'}`,
-                    `当前时间: ${new Date().toLocaleString()}`,
-                    `页面URL: ${location.href}`,
-                    `屏幕分辨率: ${screen.width}x${screen.height}`,
-                    `视口大小: ${window.innerWidth}x${window.innerHeight}`,
-                    `设备像素比: ${window.devicePixelRatio || '未知'}`
-                ].join('\n');
-                
-                debugText.textContent = info;
-                debugInfo.classList.remove('hidden');
-            }
-        }
-
-        // 添加摄像头设备检测功能
-        async function checkCameraDevices() {
-            try {
-                if (navigator.mediaDevices && typeof navigator.mediaDevices.enumerateDevices === 'function') {
-                    const devices = await navigator.mediaDevices.enumerateDevices();
-                    const videoDevices = devices.filter(device => device.kind === 'videoinput');
-                    console.log('检测到的摄像头设备:', videoDevices);
-                    
-                    const debugInfo = document.getElementById('debugInfo');
-                    const debugText = document.getElementById('debugText');
-                    
-                    if (debugInfo && debugText) {
-                        const currentInfo = debugText.textContent;
-                        const deviceInfo = `\n摄像头设备数量: ${videoDevices.length}`;
-                        const deviceDetails = videoDevices.map((device, index) => 
-                            `设备${index + 1}: ${device.label || '未命名设备'}`
-                        ).join('\n');
-                        
-                        debugText.textContent = currentInfo + deviceInfo + '\n' + deviceDetails;
-                        debugInfo.classList.remove('hidden');
-                    }
-                } else {
-                    console.warn('enumerateDevices API 不可用');
-                    const debugInfo = document.getElementById('debugInfo');
-                    const debugText = document.getElementById('debugText');
-                    if (debugInfo && debugText) {
-                        debugText.textContent = 'enumerateDevices API 不可用，无法检测摄像头设备';
-                        debugInfo.classList.remove('hidden');
-                    }
-                }
-            } catch (error) {
-                console.error('检测摄像头设备失败:', error);
-                const debugInfo = document.getElementById('debugInfo');
-                const debugText = document.getElementById('debugText');
-                if (debugInfo && debugText) {
-                    debugText.textContent = `检测摄像头设备失败: ${error.message}`;
-                    debugInfo.classList.remove('hidden');
-                }
-            }
-        }
-
-        // 新增：测试摄像头权限
-        async function testCameraPermission() {
-            const debugInfo = document.getElementById('debugInfo');
-            const debugText = document.getElementById('debugText');
-            
-            if (!debugInfo || !debugText) return;
-            
-            // 检查API支持
-            if (!navigator.mediaDevices) {
-                debugText.textContent = '✗ 浏览器不支持 mediaDevices API';
-                debugInfo.classList.remove('hidden');
-                return;
-            }
-            
-            if (typeof navigator.mediaDevices.getUserMedia !== 'function') {
-                debugText.textContent = '✗ 浏览器不支持 getUserMedia API';
-                debugInfo.classList.remove('hidden');
-                return;
-            }
-            
-            try {
-                debugText.textContent = '正在测试摄像头权限...';
-                debugInfo.classList.remove('hidden');
-                
-                // 尝试获取摄像头权限
-                const stream = await navigator.mediaDevices.getUserMedia({ 
-                    video: true, 
-                    audio: false 
-                });
-                
-                // 获取视频轨道信息
-                const videoTrack = stream.getVideoTracks()[0];
-                const capabilities = videoTrack.getCapabilities();
-                const settings = videoTrack.getSettings();
-                
-                const testResult = [
-                    '✓ 摄像头权限测试成功',
-                    `设备名称: ${videoTrack.label || '未命名'}`,
-                    `设备ID: ${videoTrack.id}`,
-                    `分辨率: ${settings.width}x${settings.height}`,
-                    `帧率: ${settings.frameRate || '未知'}fps`,
-                    `支持的分辨率: ${capabilities.width ? `${capabilities.width.min}-${capabilities.width.max}` : '未知'}`,
-                    `支持的帧率: ${capabilities.frameRate ? `${capabilities.frameRate.min}-${capabilities.frameRate.max}` : '未知'}`
-                ].join('\n');
-                
-                debugText.textContent = testResult;
-                
-                // 停止测试流
-                stream.getTracks().forEach(track => track.stop());
-                
-            } catch (error) {
-                const errorResult = [
-                    '✗ 摄像头权限测试失败',
-                    `错误类型: ${error.name}`,
-                    `错误信息: ${error.message}`,
-                    '',
-                    '可能的原因：',
-                    '1. 摄像头权限被拒绝',
-                    '2. 摄像头被其他应用占用',
-                    '3. 设备没有摄像头',
-                    '4. 浏览器不支持摄像头访问',
-                    '5. 安全环境问题（移动设备需要HTTPS或本地网络）'
-                ].join('\n');
-                
-                debugText.textContent = errorResult;
-            }
-        }
-
-        // 添加调试按钮（仅在开发环境显示）
+        // 添加调试功能（仅在开发环境显示）
         if (location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.hostname.match(/^192\.168\./) || location.hostname.match(/^10\./) || location.hostname.match(/^172\.(1[6-9]|2[0-9]|3[0-1])\./)) {
             const debugBtn = document.createElement('button');
             debugBtn.textContent = '显示调试信息';
             debugBtn.className = 'button secondary';
             debugBtn.style.fontSize = '12px';
             debugBtn.style.padding = '8px 16px';
-            debugBtn.onclick = showDebugInfo;
-            
-            const cameraBtn = document.createElement('button');
-            cameraBtn.textContent = '检测摄像头';
-            cameraBtn.className = 'button secondary';
-            cameraBtn.style.fontSize = '12px';
-            cameraBtn.style.padding = '8px 16px';
-            cameraBtn.onclick = checkCameraDevices;
-            
-            const testBtn = document.createElement('button');
-            testBtn.textContent = '测试摄像头权限';
-            testBtn.className = 'button secondary';
-            testBtn.style.fontSize = '12px';
-            testBtn.style.padding = '8px 16px';
-            testBtn.onclick = testCameraPermission;
-            
-            const simpleTestBtn = document.createElement('button');
-            simpleTestBtn.textContent = '简单摄像头测试';
-            simpleTestBtn.className = 'button secondary';
-            simpleTestBtn.style.fontSize = '12px';
-            simpleTestBtn.style.padding = '8px 16px';
-            simpleTestBtn.onclick = testCameraSimple;
+            debugBtn.onclick = () => {
+                const debugInfo = document.getElementById('debugInfo');
+                const debugText = document.getElementById('debugText');
+                
+                if (debugInfo && debugText) {
+                    const info = [
+                        `浏览器: ${navigator.userAgent}`,
+                        `协议: ${location.protocol}`,
+                        `主机: ${location.hostname}:${location.port}`,
+                        `完整URL: ${location.href}`,
+                        `HTTPS: ${location.protocol === 'https:'}`,
+                        `本地主机: ${location.hostname === 'localhost' || location.hostname === '127.0.0.1'}`,
+                        `移动设备: ${/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)}`,
+                        `Room参数: ${new URLSearchParams(window.location.search).get('room') || '未设置'}`,
+                        `摄像头支持: ${navigator.mediaDevices && typeof navigator.mediaDevices.getUserMedia === 'function' ? '是' : '否'}`,
+                        `当前时间: ${new Date().toLocaleString()}`,
+                        `屏幕分辨率: ${screen.width}x${screen.height}`,
+                        `视口大小: ${window.innerWidth}x${window.innerHeight}`,
+                        `设备像素比: ${window.devicePixelRatio || '未知'}`
+                    ].join('\n');
+                    
+                    debugText.textContent = info;
+                    debugInfo.classList.remove('hidden');
+                }
+            };
             
             const buttonGroup = document.querySelector('.button-group');
             if (buttonGroup) {
                 buttonGroup.appendChild(debugBtn);
-                buttonGroup.appendChild(cameraBtn);
-                buttonGroup.appendChild(testBtn);
-                buttonGroup.appendChild(simpleTestBtn);
             }
         }
     </script>

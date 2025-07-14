@@ -1,218 +1,178 @@
 <!DOCTYPE html>
-<html lang="UTF-8">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>二维码接收器</title>
+    <title>二维码接收端</title>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
             max-width: 800px;
             margin: 0 auto;
+            background-color: white;
             padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        #qrImage {
+            display: block;
+            margin: 20px auto;
+            max-width: 100%;
+        }
+        #qrText {
+            margin: 20px 0;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            word-break: break-all;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
             text-align: center;
         }
-
-        .qr-container {
-            margin: 20px auto;
-            padding: 20px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
+        .connected {
+            background-color: #d4edda;
+            color: #155724;
         }
-
-        .qr-image {
-            min-height: 200px;
-            min-width: 200px;
-            margin: 20px auto;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: #f5f5f5;
-            border-radius: 8px;
+        .disconnected {
+            background-color: #f8d7da;
+            color: #721c24;
         }
-
-        .qr-text {
-            word-break: break-all;
-            padding: 10px;
-            background: #f5f5f5;
-            border-radius: 4px;
-            margin: 10px 0;
-            font-family: monospace;
-        }
-
-        .status {
-            color: #666;
-            margin: 10px 0;
-        }
-
-        .status.connected {
-            color: green;
-        }
-
-        .status.disconnected {
-            color: red;
-        }
-
-        canvas {
-            max-width: 100%;
-            height: auto;
-        }
-
         .error {
-            color: red;
+            background-color: #f8d7da;
+            color: #721c24;
             padding: 10px;
             margin: 10px 0;
-            background: #fff0f0;
             border-radius: 4px;
         }
     </style>
 </head>
 <body>
-<h1>二维码接收器</h1>
-<div id="status" class="status disconnected">未连接</div>
-
-<div class="qr-container">
-    <div id="qrImage" class="qr-image">
-        等待数据...
+    <div class="container">
+        <h1>二维码接收端</h1>
+        <div id="status" class="status">正在连接...</div>
+        <div id="qrText"></div>
+        <img id="qrImage" alt="二维码" />
     </div>
-    <div id="qrText" class="qr-text">
-        等待数据...
-    </div>
-</div>
 
-<!-- 加载QRCode库 -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-
-<script>
-    class QRReceiver {
-        constructor() {
-            this.room = new URLSearchParams(window.location.search).get("room");
-            this.qrImage = document.getElementById('qrImage');
-            this.qrText = document.getElementById('qrText');
-            this.statusElement = document.getElementById('status');
-            this.init();
-        }
-
-        showError(message) {
-            const errorDiv = document.createElement('div');
-            errorDiv.className = 'error';
-            errorDiv.textContent = message;
-            document.body.insertBefore(errorDiv, document.body.firstChild);
-            console.error(message);
-        }
-
-        init() {
-            if (!this.room) {
-                this.showError('错误: 缺少房间号参数，请使用?room=房间号访问');
-                return;
+    <script>
+        class QRReceiver {
+            constructor() {
+                this.room = new URLSearchParams(window.location.search).get("room");
+                this.qrImage = document.getElementById('qrImage');
+                this.qrText = document.getElementById('qrText');
+                this.statusElement = document.getElementById('status');
+                this.pollingInterval = 1000; // 轮询间隔（毫秒）
+                this.lastData = null;
+                this.init();
             }
 
-            // 检查QRCode库是否加载
-            if (typeof QRCode === 'undefined') {
-                this.showError('错误: QRCode库未能正确加载');
-                return;
+            showError(message) {
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'error';
+                errorDiv.textContent = message;
+                document.body.insertBefore(errorDiv, document.body.firstChild);
+                console.error(message);
             }
 
-            this.connectWebSocket();
-        }
-
-        connectWebSocket() {
-            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-            const host = window.location.host;
-            const wsUrl = `${protocol}//${host}/room/${this.room}/customer`;
-
-            try {
-                this.ws = new WebSocket(wsUrl);
-
-                this.ws.onopen = () => {
-                    this.updateStatus('已连接', true);
-                    console.log('WebSocket连接已建立');
-                };
-
-                this.ws.onclose = () => {
-                    this.updateStatus('未连接', false);
-                    console.log('WebSocket连接已关闭');
-                    // 尝试重新连接
-                    setTimeout(() => this.connectWebSocket(), 3000);
-                };
-
-                this.ws.onerror = (error) => {
-                    this.updateStatus('连接错误', false);
-                    console.error('WebSocket错误:', error);
-                };
-
-                this.ws.onmessage = (event) => {
-                    console.log('收到消息:', event.data);
-                    this.handleMessage(event.data);
-                };
-
-            } catch (error) {
-                this.showError('创建WebSocket连接失败: ' + error.message);
-                console.error('WebSocket创建错误:', error);
-            }
-        }
-
-        updateStatus(message, connected = false) {
-            this.statusElement.textContent = message;
-            this.statusElement.className = `status ${connected ? 'connected' : 'disconnected'}`;
-        }
-
-        async handleMessage(data) {
-            try {
-                // 更新文本显示
-                this.qrText.textContent = data;
-
-                // 检查数据是否有效
-                if (!data || typeof data !== 'string' || data.trim().length === 0) {
-                    this.qrImage.innerHTML = '<div style="color: red;">无效的二维码数据</div>';
+            init() {
+                if (!this.room) {
+                    this.showError('错误: 缺少房间号参数，请使用?room=房间号访问');
                     return;
                 }
 
-                // 清空现有的二维码显示区域
-                this.qrImage.innerHTML = '';
+                this.checkRoomExists();
+            }
 
-                // 创建一个div用于QR码
-                const qrDiv = document.createElement('div');
-                this.qrImage.appendChild(qrDiv);
-
-                // 计算合适的QR码大小
-                const baseSize = 200;
-                const dataLength = data.length;
-                // 如果数据较长，适当增加二维码大小
-                const size = dataLength > 500 ? 300 : baseSize;
-
-                // 生成二维码，使用更高的版本
-                new QRCode(qrDiv, {
-                    text: data,
-                    width: size,
-                    height: size,
-                    colorDark: '#000000',
-                    colorLight: '#ffffff',
-                    correctLevel: QRCode.CorrectLevel.L  // 降低纠错级别以增加数据容量
-                });
-
-                // 添加提示信息
-                if (dataLength > 500) {
-                    const tipDiv = document.createElement('div');
-                    tipDiv.style.fontSize = '12px';
-                    tipDiv.style.color = '#666';
-                    tipDiv.style.marginTop = '10px';
-                    tipDiv.textContent = '(二维码已自动放大以容纳更多数据)';
-                    this.qrImage.appendChild(tipDiv);
+            async checkRoomExists() {
+                try {
+                    const response = await fetch(`/chatroom/exists?code=${this.room}`);
+                    const data = await response.json();
+                    
+                    if (data.exists) {
+                        this.updateStatus('已连接到聊天室', true);
+                        this.startPolling();
+                    } else {
+                        this.updateStatus('聊天室不存在', false);
+                    }
+                } catch (error) {
+                    this.updateStatus('连接失败', false);
+                    console.error('检查聊天室失败:', error);
                 }
+            }
 
-            } catch (error) {
-                console.error('处理消息时出错:', error);
-                this.qrImage.innerHTML = '<div style="color: red;">二维码生成失败</div>';
-                this.showError('二维码生成失败: ' + error.message);
+            startPolling() {
+                this.pollData();
+                setInterval(() => this.pollData(), this.pollingInterval);
+            }
+
+            async pollData() {
+                try {
+                    const response = await fetch(`/chatroom/data?code=${this.room}`);
+                    const result = await response.json();
+                    
+                    if (result.success && result.data !== this.lastData) {
+                        this.lastData = result.data;
+                        if (result.data) {
+                            this.handleData(result.data);
+                        }
+                    }
+                } catch (error) {
+                    console.error('获取数据失败:', error);
+                }
+            }
+
+            handleData(data) {
+                console.log('收到数据:', data);
+                this.qrText.textContent = data;
+                
+                // 生成二维码
+                try {
+                    // 根据数据长度计算合适的类型号
+                    const typeNumber = this.calculateTypeNumber(data);
+                    const qr = qrcode(typeNumber, 'L');
+                    qr.addData(data);
+                    qr.make();
+                    this.qrImage.src = qr.createDataURL(4);
+                } catch (error) {
+                    console.error('生成二维码失败:', error);
+                    this.showError('生成二维码失败: ' + error.message);
+                }
+            }
+
+            calculateTypeNumber(data) {
+                const length = data.length;
+                if (length <= 25) return 1;
+                if (length <= 47) return 2;
+                if (length <= 77) return 3;
+                if (length <= 114) return 4;
+                if (length <= 154) return 5;
+                if (length <= 195) return 6;
+                if (length <= 224) return 7;
+                if (length <= 279) return 8;
+                if (length <= 335) return 9;
+                if (length <= 395) return 10;
+                return 40; // 最大类型号
+            }
+
+            updateStatus(message, connected = false) {
+                this.statusElement.textContent = message;
+                this.statusElement.className = `status ${connected ? 'connected' : 'disconnected'}`;
             }
         }
-    }
 
-    // 页面加载完成后初始化
-    window.addEventListener('DOMContentLoaded', () => {
-        new QRReceiver();
-    });
-</script>
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            new QRReceiver();
+        });
+    </script>
 </body>
 </html>

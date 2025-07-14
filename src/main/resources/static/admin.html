@@ -541,9 +541,6 @@
                                 <button id="refresh_rooms" class="btn btn-info">
                                     <i class="fas fa-sync-alt"></i> 刷新状态
                                 </button>
-                                <button id="join_room" class="btn btn-warning">
-                                    <i class="fas fa-sign-in-alt"></i> 加入聊天室
-                                </button>
                                 <button id="breakup_room" class="btn btn-danger">
                                     <i class="fas fa-trash"></i> 解散聊天室
                                 </button>
@@ -563,7 +560,7 @@
                     </div>
                     <div class="right-panel">
                         <div id="room-list" class="room-list">
-                            <h3><i class="fas fa-list"></i> 聊天室列表</h3>
+                            <h3><i class="fas fa-hashtag"></i> 聊天室ID</h3>
                             <div id="room-items"></div>
                         </div>
                     </div>
@@ -632,57 +629,37 @@
             // 始终显示聊天室列表容器
             roomListElement.style.display = 'block';
             
-            if (!rooms || (Array.isArray(rooms) && rooms.length === 0)) {
+            if (!rooms || typeof rooms !== 'object') {
                 roomItemsElement.innerHTML = '<div class="room-item"><div class="room-info">暂无聊天室</div></div>';
                 return;
             }
 
-            // 处理新的数据结构
-            let roomArray = [];
-            if (Array.isArray(rooms)) {
-                roomArray = rooms;
-            } else if (typeof rooms === 'object') {
-                // 新的数据结构：{roomCode: {code, userCount, userList, ...}}
-                roomArray = Object.values(rooms);
-            } else {
-                // 兼容旧的数据结构（Set）
-                roomArray = Array.from(rooms);
-            }
-            
-            if (roomArray.length === 0) {
+            const roomIds = Object.keys(rooms);
+            if (roomIds.length === 0) {
                 roomItemsElement.innerHTML = '<div class="room-item"><div class="room-info">暂无聊天室</div></div>';
                 return;
             }
 
             roomItemsElement.innerHTML = '';
-            roomArray.forEach(room => {
+            roomIds.forEach(roomId => {
                 const roomItem = document.createElement('div');
                 roomItem.className = 'room-item';
                 
-                // 处理新的数据结构
-                let roomCode, userList, userCount;
-                if (typeof room === 'object' && room.code) {
-                    // 新数据结构
-                    roomCode = room.code;
-                    userList = room.userList || [];
-                    userCount = room.userCount || 0;
-                } else {
-                    // 旧数据结构或简单字符串
-                    roomCode = room.code || room;
-                    userList = [];
-                    userCount = 0;
-                }
-                
-                // 格式化用户列表
-                const userDisplay = userList.length > 0 
-                    ? userList.map(user => `<span class="user-badge ${user}">${user}</span>`).join(' ')
-                    : '<span class="no-users">暂无用户</span>';
-                
                 roomItem.innerHTML = `
-                    <div class="room-code">${roomCode}</div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <div class="room-code" style="font-size: 1.2rem;">
+                            <span style="font-weight: bold;">ID: </span>${roomId}
+                        </div>
+                    </div>
                     <div class="room-info">
-                        <div class="user-count">在线用户: ${userCount}</div>
-                        <div class="user-list">${userDisplay}</div>
+                        <div class="room-links" style="display: flex; gap: 10px;">
+                            <button class="btn btn-sm btn-primary" onclick="copyLink('${roomId}', 'proxy')" style="padding: 4px 8px; font-size: 12px;">
+                                <i class="fas fa-copy"></i> 复制代理链接
+                            </button>
+                            <button class="btn btn-sm btn-warning" onclick="copyLink('${roomId}', 'customer')" style="padding: 4px 8px; font-size: 12px;">
+                                <i class="fas fa-copy"></i> 复制客户链接
+                            </button>
+                        </div>
                     </div>
                 `;
                 roomItemsElement.appendChild(roomItem);
@@ -695,7 +672,11 @@
                 showLoading();
                 disableButtons();
                 
-                const response = await fetch(url, {
+                // 添加端口号到请求URL
+                const baseUrl = 'http://localhost:8090';
+                const fullUrl = baseUrl + url;
+                
+                const response = await fetch(fullUrl, {
                     ...options,
                     headers: {
                         'Content-Type': 'application/json',
@@ -703,15 +684,18 @@
                     }
                 });
 
+                const responseText = await response.text();
+                
                 if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    throw new Error(`HTTP ${response.status}: ${responseText}`);
                 }
 
-                const contentType = response.headers.get('content-type');
-                if (contentType && contentType.includes('application/json')) {
-                    return await response.json();
-                } else {
-                    return await response.text();
+                try {
+                    // 尝试解析为JSON
+                    return JSON.parse(responseText);
+                } catch (e) {
+                    // 如果不是JSON，返回原始文本
+                    return responseText;
                 }
             } catch (error) {
                 throw error;
@@ -724,9 +708,11 @@
         // 事件监听器
         document.getElementById('break_all').addEventListener('click', async function () {
             try {
-                const data = await makeRequest('/chatroom/remove');
-                appendMessage(`解散全部聊天室成功: ${data}`, 'success');
+                const data = await makeRequest('/chatroom/breakAll');
+                appendMessage(`解散全部聊天室成功: ${JSON.stringify(data, null, 2)}`, 'success');
                 showNotification('解散全部聊天室成功！', 'success');
+                // 自动刷新聊天室列表
+                document.getElementById('refresh_rooms').click();
             } catch (error) {
                 appendMessage(`解散全部聊天室失败: ${error.message}`, 'error');
                 showNotification('解散全部聊天室失败！', 'error');
@@ -758,7 +744,7 @@
             }
 
             try {
-                const data = await makeRequest(`/chatroom/creat?code=${encodeURIComponent(inputData)}`);
+                const data = await makeRequest(`/chatroom/create?code=${encodeURIComponent(inputData)}`);
                 appendMessage(`创建聊天室 ${inputData} 成功: ${data}`, 'success');
                 showNotification(`创建聊天室 ${inputData} 成功！`, 'success');
             } catch (error) {
@@ -770,20 +756,24 @@
         document.getElementById('query_room').addEventListener('click', async function () {
             try {
                 const response = await makeRequest('/chatroom/query');
-                appendMessage(`查询聊天室成功: ${JSON.stringify(response, null, 2)}`, 'success');
                 
-                // 检查响应结构并提取聊天室列表
-                if (response && response.success && response.data) {
-                    displayRoomList(response.data);
-                    showNotification(`查询成功！共找到 ${response.count || 0} 个聊天室`, 'success');
-                } else if (response && response.success) {
-                    displayRoomList([]);
-                    showNotification('查询成功！暂无聊天室', 'info');
+                // 记录原始响应
+                appendMessage(`查询聊天室响应: ${JSON.stringify(response, null, 2)}`, 'info');
+                
+                // 检查响应格式
+                if (response && typeof response === 'object') {
+                    displayRoomList(response);
+                    const roomCount = Object.keys(response).length;
+                    showNotification(`查询成功！共找到 ${roomCount} 个聊天室`, 'success');
+                    appendMessage(`查询聊天室成功，找到 ${roomCount} 个聊天室`, 'success');
                 } else {
-                    appendMessage(`查询失败: ${response.message || '未知错误'}`, 'error');
-                    showNotification('查询失败！', 'error');
+                    displayRoomList({});
+                    showNotification('查询成功！暂无聊天室', 'info');
+                    appendMessage('查询聊天室成功，暂无聊天室', 'info');
                 }
             } catch (error) {
+                console.error('Query error:', error);
+                displayRoomList({});
                 appendMessage(`查询聊天室失败: ${error.message}`, 'error');
                 showNotification('查询聊天室失败！', 'error');
             }
@@ -792,68 +782,26 @@
         document.getElementById('refresh_rooms').addEventListener('click', async function () {
             try {
                 const response = await makeRequest('/chatroom/query');
-                appendMessage(`刷新聊天室状态成功: ${JSON.stringify(response, null, 2)}`, 'success');
                 
-                // 检查响应结构并提取聊天室列表
-                if (response && response.success && response.data) {
-                    displayRoomList(response.data);
-                    showNotification(`刷新成功！共找到 ${response.count || 0} 个聊天室`, 'success');
-                } else if (response && response.success) {
-                    displayRoomList([]);
-                    showNotification('刷新成功！暂无聊天室', 'info');
+                // 记录原始响应
+                appendMessage(`刷新聊天室响应: ${JSON.stringify(response, null, 2)}`, 'info');
+                
+                // 检查响应格式
+                if (response && typeof response === 'object') {
+                    displayRoomList(response);
+                    const roomCount = Object.keys(response).length;
+                    showNotification(`刷新成功！共找到 ${roomCount} 个聊天室`, 'success');
+                    appendMessage(`刷新聊天室成功，找到 ${roomCount} 个聊天室`, 'success');
                 } else {
-                    appendMessage(`刷新失败: ${response.message || '未知错误'}`, 'error');
-                    showNotification('刷新失败！', 'error');
+                    displayRoomList({});
+                    showNotification('刷新成功！暂无聊天室', 'info');
+                    appendMessage('刷新聊天室成功，暂无聊天室', 'info');
                 }
             } catch (error) {
-                appendMessage(`刷新聊天室状态失败: ${error.message}`, 'error');
-                showNotification('刷新聊天室状态失败！', 'error');
-            }
-        });
-
-        document.getElementById('join_room').addEventListener('click', function () {
-            const room = document.getElementById('code').value.trim();
-            if (!room) {
-                showNotification('请输入聊天室代码！', 'error');
-                return;
-            }
-
-            // 如果已经有连接，先关闭
-            if (window.adminWebSocket && window.adminWebSocket.readyState === WebSocket.OPEN) {
-                window.adminWebSocket.close();
-            }
-
-            // 动态获取WebSocket URL，支持本地开发和生产环境
-            const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
-            const host = location.hostname === 'localhost' || location.hostname === '127.0.0.1' 
-                ? 'localhost:8080' 
-                : location.host;
-            const ws = `${protocol}//${host}/room/${encodeURIComponent(room)}/admin`;
-            
-            try {
-                window.adminWebSocket = new WebSocket(ws);
-                
-                window.adminWebSocket.onopen = function () {
-                    appendMessage(`WebSocket 连接成功: ${new Date().toLocaleString()}`, 'success');
-                    showNotification('WebSocket 连接成功！', 'success');
-                };
-                
-                window.adminWebSocket.onclose = function (event) {
-                    appendMessage(`WebSocket 连接关闭: ${new Date().toLocaleString()} (代码: ${event.code})`, 'info');
-                    showNotification('WebSocket 连接已关闭', 'info');
-                };
-                
-                window.adminWebSocket.onerror = function (event) {
-                    appendMessage(`WebSocket 错误: ${event.message || '未知错误'}`, 'error');
-                    showNotification('WebSocket 连接错误！', 'error');
-                };
-                
-                window.adminWebSocket.onmessage = function (event) {
-                    appendMessage(`收到消息: ${event.data}`, 'info');
-                };
-            } catch (e) {
-                appendMessage(`连接错误: ${e.message}`, 'error');
-                showNotification('连接错误！', 'error');
+                console.error('Refresh error:', error);
+                displayRoomList({});
+                appendMessage(`刷新聊天室失败: ${error.message}`, 'error');
+                showNotification('刷新聊天室失败！', 'error');
             }
         });
 
@@ -871,6 +819,28 @@
 
         // 初始化
         appendMessage('聊天室管理系统已启动', 'info');
+        
+        // 添加复制链接功能
+        async function copyLink(roomCode, type) {
+            const baseUrl = 'http://localhost:8090';
+            const url = type === 'proxy' 
+                ? `${baseUrl}/proxy.html?room=${roomCode}`
+                : `${baseUrl}/customer.html?room=${roomCode}`;
+            
+            try {
+                await navigator.clipboard.writeText(url);
+                showNotification(`${type === 'proxy' ? '代理' : '客户'}链接已复制到剪贴板！`, 'success');
+            } catch (err) {
+                // 降级方案：创建一个临时输入框来复制
+                const tempInput = document.createElement('input');
+                tempInput.value = url;
+                document.body.appendChild(tempInput);
+                tempInput.select();
+                document.execCommand('copy');
+                document.body.removeChild(tempInput);
+                showNotification(`${type === 'proxy' ? '代理' : '客户'}链接已复制到剪贴板！`, 'success');
+            }
+        }
         
         // 初始化显示聊天室列表
         displayRoomList([]);

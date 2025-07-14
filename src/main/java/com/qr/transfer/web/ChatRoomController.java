@@ -1,88 +1,99 @@
 package com.qr.transfer.web;
 
-import com.qr.transfer.room.Room;
+import com.qr.transfer.service.ChatRoomService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
 @RestController
 @RequestMapping("/chatroom")
 public class ChatRoomController {
 
+    @Autowired
+    private ChatRoomService chatRoomService;
+
     /**
      * 创建聊天室
      */
-    @GetMapping("/creat")
-    public String createRoom(@RequestParam("code") String code) {
+    @GetMapping("/create")
+    public ResponseEntity<Map<String, Object>> createRoom(@RequestParam("code") String code) {
+        Map<String, Object> response = new HashMap<>();
         try {
-            Room.createRoom(code);
-            return "创建聊天室成功：" + code;
+            chatRoomService.createRoom(code);
+            response.put("success", true);
+            response.put("message", "创建聊天室成功：" + code);
         } catch (Exception e) {
-            return "创建聊天室失败：" + e.getMessage();
+            response.put("success", false);
+            response.put("message", "创建聊天室失败：" + e.getMessage());
         }
+        return ResponseEntity.ok(response);
     }
 
     /**
      * 解散聊天室
      */
     @GetMapping("/breakup")
-    public String breakupRoom(@RequestParam("code") String code) {
+    public ResponseEntity<Map<String, Object>> breakupRoom(@RequestParam("code") String code) {
+        Map<String, Object> response = new HashMap<>();
         try {
-            Room.removeRoom(code);
-            return "解散聊天室成功：" + code;
+            chatRoomService.removeRoom(code);
+            response.put("success", true);
+            response.put("message", "解散聊天室成功：" + code);
         } catch (Exception e) {
-            return "解散聊天室失败：" + e.getMessage();
+            response.put("success", false);
+            response.put("message", "解散聊天室失败：" + e.getMessage());
         }
-    }
-
-    /**
-     * 解散所有聊天室
-     */
-    @GetMapping("/remove")
-    public String removeAllRooms() {
-        try {
-            Room.removeAllRooms();
-            return "解散所有聊天室成功";
-        } catch (Exception e) {
-            return "解散所有聊天室失败：" + e.getMessage();
-        }
+        return ResponseEntity.ok(response);
     }
 
     /**
      * 查询聊天室列表
      */
     @GetMapping("/query")
-    public Map<String, Object> queryRooms() {
-        Map<String, Object> result = new HashMap<>();
-        try {
-            Map<String, Object> roomDetails = Room.getRoomDetails();
-            result.put("success", true);
-            result.put("data", roomDetails);
-            result.put("count", roomDetails.size());
-            result.put("debug", "返回详细聊天室信息，包含用户连接状态");
-        } catch (Exception e) {
-            result.put("success", false);
-            result.put("message", e.getMessage());
-        }
-        return result;
+    public ResponseEntity<Map<String, String>> queryRooms() {
+        Map<String, String> room = chatRoomService.getAllRoom();
+        return ResponseEntity.ok(room);
     }
 
     /**
      * 检查聊天室是否存在
      */
     @GetMapping("/exists")
-    public Map<String, Object> checkRoomExists(@RequestParam("code") String code) {
-        Map<String, Object> result = new HashMap<>();
+    public ResponseEntity<Map<String, Object>> checkRoomExists(@RequestParam("code") String code) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("exists", chatRoomService.roomExists(code));
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * 更新聊天室数据（代理端调用）
+     */
+    @PostMapping("/data")
+    public ResponseEntity<Map<String, Object>> updateRoomData(
+            @RequestParam("code") String code,
+            @RequestParam("data") String data) {
+        Map<String, Object> response = new HashMap<>();
         try {
-            boolean exists = Room.roomExists(code);
-            result.put("success", true);
-            result.put("exists", exists);
+            chatRoomService.updateRoomData(code, data);
+            response.put("success", true);
+            response.put("message", "数据更新成功");
         } catch (Exception e) {
-            result.put("success", false);
-            result.put("message", e.getMessage());
+            response.put("success", false);
+            response.put("message", "数据更新失败：" + e.getMessage());
         }
-        return result;
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * 获取聊天室数据（客户端调用）
+     */
+    @GetMapping("/data")
+    public ResponseEntity<String> getRoomData(@RequestParam("code") String code) {
+        Map<String, String> response = new HashMap<>();
+        String data = chatRoomService.getRoomData(code);
+        return ResponseEntity.ok(data);
     }
 } 
