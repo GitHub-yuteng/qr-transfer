@@ -397,7 +397,6 @@
 
         <div class="button-group">
             <button id="switchCamera" class="button secondary hidden">切换摄像头</button>
-            <button id="backToInput" class="button secondary">返回输入</button>
         </div>
         
         <!-- 调试信息区域 -->
@@ -439,7 +438,6 @@
                 this.cameraSection = document.getElementById('cameraSection');
                 this.requestPermissionBtn = document.getElementById('requestPermission');
                 this.switchCameraBtn = document.getElementById('switchCamera');
-                this.backToInputBtn = document.getElementById('backToInput');
                 
                 this.roomInputSection = document.getElementById('roomInputSection');
                 this.roomCodeInput = document.getElementById('roomCodeInput');
@@ -518,31 +516,6 @@
                 if (this.switchCameraBtn) {
                     this.switchCameraBtn.addEventListener('click', () => this.switchCamera());
                 }
-
-                if (this.backToInputBtn) {
-                    this.backToInputBtn.addEventListener('click', () => {
-                        console.log('Back to input button clicked');
-                        
-                        // 停止扫描
-                        this.isScanning = false;
-                        if (this.stream) {
-                            this.stream.getTracks().forEach(track => track.stop());
-                        }
-                        
-                        // 重置UI状态
-                        this.roomInputSection.classList.remove('hidden');
-                        this.permissionRequest.classList.add('hidden');
-                        this.cameraSection.classList.add('hidden');
-                        this.switchCameraBtn.classList.add('hidden');
-                        this.backToInputBtn.classList.add('hidden');
-                        
-                        this.updateScanStatus('等待扫描二维码...');
-                        this.output.textContent = '等待扫描二维码...';
-                        this.output.style.background = '#e8f5e8';
-                        this.output.style.borderColor = '#4CAF50';
-                        this.errorStatus.classList.add('hidden');
-                    });
-                }
             }
 
             checkBrowserCompatibility() {
@@ -592,10 +565,6 @@
                     console.error('发送数据时出错:', error);
                     if (error.message.includes('404')) {
                         this.showError('聊天室可能已经解散，请返回重新创建');
-                        // 自动返回输入界面
-                        if (this.backToInputBtn) {
-                            this.backToInputBtn.click();
-                        }
                     } else {
                         this.showError('网络错误，请重试');
                     }
@@ -656,10 +625,6 @@
                     this.roomInputSection.classList.add('hidden');
                     this.permissionRequest.classList.remove('hidden');
                     
-                    if (this.backToInputBtn) {
-                        this.backToInputBtn.classList.remove('hidden');
-                    }
-                    
                     await this.requestCameraPermission();
                 } else {
                     this.connectRoomBtn.innerHTML = '连接聊天室';
@@ -719,10 +684,6 @@
                     this.permissionRequest.classList.add('hidden');
                     this.cameraSection.classList.remove('hidden');
                     this.switchCameraBtn.classList.remove('hidden');
-                    
-                    if (this.backToInputBtn) {
-                        this.backToInputBtn.classList.add('hidden');
-                    }
                 } catch (error) {
                     this.handleCameraError(error);
                 }
