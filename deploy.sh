@@ -3,8 +3,8 @@
 # 配置信息
 REMOTE_USER="root"
 REMOTE_HOST="139.129.27.112"
-REMOTE_PATH="/www/wwwroot/wins/qr-transfer-1.0.0.jar
-DIST_FILE="target/qr-transfer-1.0.0.jar
+REMOTE_PATH="/www/wwwroot/wins/qr-transfer-1.0.0.jar"
+DIST_FILE="target/qr-transfer-1.0.0.jar"
 
 # 检查本地 JAR 文件是否存在
 if [ ! -f "$DIST_FILE" ]; then
