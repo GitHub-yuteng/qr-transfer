@@ -544,11 +544,7 @@
                 }
 
                 try {
-                    const configResponse = await fetch('/chatroom/config');
-                    const config = await configResponse.json();
-                    const baseUrl = config.baseUrl;
-
-                    const response = await fetch(`${baseUrl}/chatroom/data`, {
+                    const response = await fetch(`/chatroom/data`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/x-www-form-urlencoded',
@@ -577,11 +573,8 @@
 
             async checkRoomExists() {
                 try {
-                    const configResponse = await fetch('/chatroom/config');
-                    const config = await configResponse.json();
-                    const baseUrl = config.baseUrl;
                     
-                    const response = await fetch(`${baseUrl}/chatroom/exists?code=${this.room}`);
+                    const response = await fetch(`/chatroom/exists?code=${this.room}`);
                     
                     if (!response.ok) {
                         throw new Error(`HTTP ${response.status}: ${await response.text()}`);

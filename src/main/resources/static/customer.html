@@ -94,11 +94,7 @@
 
             async checkRoomExists() {
                 try {
-                    const configResponse = await fetch('/chatroom/config');
-                    const config = await configResponse.json();
-                    const baseUrl = config.baseUrl;
-                    
-                    const response = await fetch(`${baseUrl}/chatroom/exists?code=${this.room}`);
+                    const response = await fetch(`/chatroom/exists?code=${this.room}`);
                     const data = await response.json();
                     
                     if (data.exists) {
@@ -120,11 +116,7 @@
 
             async pollData() {
                 try {
-                    const configResponse = await fetch('/chatroom/config');
-                    const config = await configResponse.json();
-                    const baseUrl = config.baseUrl;
-                    
-                    const response = await fetch(`${baseUrl}/chatroom/data?code=${this.room}`);
+                    const response = await fetch(`/chatroom/data?code=${this.room}`);
                     const data = await response.text();
                     
                     if (data !== this.lastData) {

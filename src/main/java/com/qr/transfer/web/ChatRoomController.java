@@ -16,19 +16,6 @@ public class ChatRoomController {
     @Autowired
     private ChatRoomService chatRoomService;
 
-    @Value("${app.base-url}")
-    private String baseUrl;
-
-    /**
-     * 获取服务器配置
-     */
-    @GetMapping("/config")
-    public ResponseEntity<Map<String, String>> getConfig() {
-        Map<String, String> config = new HashMap<>();
-        config.put("baseUrl", baseUrl);
-        return ResponseEntity.ok(config);
-    }
-
     /**
      * 创建聊天室
      */
