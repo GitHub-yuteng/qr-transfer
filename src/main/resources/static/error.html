@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>错误</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { background: #f8f8f8; font-family: "PingFang SC", Arial, sans-serif; margin: 0; }
+        .error-container { max-width: 400px; margin: 80px auto; background: #fff; border-radius: 16px; box-shadow: 0 4px 16px rgba(0,0,0,0.08); padding: 32px 24px; text-align: center; }
+        .error-title { font-size: 22px; color: #d9534f; margin-bottom: 16px; }
+        .error-msg { font-size: 18px; color: #333; margin-bottom: 24px; }
+        .contact { color: #888; font-size: 15px; }
+    </style>
+</head>
+<body>
+    <div class="error-container">
+        <div class="error-title">出错啦</div>
+        <div class="error-msg" id="msg"></div>
+        <div class="contact">如有疑问，请联系客服</div>
+    </div>
+    <script>
+        const url = new URL(window.location.href);
+        document.getElementById('msg').textContent = url.searchParams.get('msg') || '请联系客服';
+    </script>
+</body>
+</html> 

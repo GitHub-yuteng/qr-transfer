@@ -1,3 +1,9 @@
 server:
   port: 8080
   address: 0.0.0.0
+
+#  ssl:
+#    key-store: classpath:192.168.30.233.p12
+#    key-password: changeit
+#    key-store-password: changeit
+#    key-store-type: PKCS12

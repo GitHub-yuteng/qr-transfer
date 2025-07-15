@@ -111,7 +111,7 @@
         <hr class="divider">
         <div class="barcode-section">
             <svg id="barcode"></svg>
-            <div class="barcode-label" id="barcode-label">86900001024825037433</div>
+            <div class="barcode-label" id="barcode-label"></div>
         </div>
         <div class="qrcode-section">
             <canvas id="qrcode"></canvas>
@@ -138,52 +138,84 @@
         </button>
     </div>
     <script>
-        // 示例数据
-        const memberId = "86900001024825037433";
-        const barcodeValue = memberId;
-        const qrValue = memberId; // 你可以换成其他内容
-        const cardNumber = "25038457";
-        const balance = "3元";
-        const store = "秀玉红茶坊后湖店";
-        let countdown = 30;
-
-        // 渲染条形码
-        JsBarcode("#barcode", barcodeValue, {
-            format: "CODE128",
-            width: 2,
-            height: 60,
-            displayValue: false,
-            margin: 0
-        });
-        document.getElementById("barcode-label").textContent = barcodeValue;
-
-        // 渲染二维码
-        const qr = qrcode(4, 'L');
-        qr.addData(qrValue);
-        qr.make();
-        const qrCanvas = document.getElementById("qrcode");
-        const ctx = qrCanvas.getContext("2d");
-        const cellSize = 8;
-        qrCanvas.width = qr.getModuleCount() * cellSize;
-        qrCanvas.height = qr.getModuleCount() * cellSize;
-        for (let row = 0; row < qr.getModuleCount(); row++) {
-            for (let col = 0; col < qr.getModuleCount(); col++) {
-                ctx.fillStyle = qr.isDark(row, col) ? "#000" : "#fff";
-                ctx.fillRect(col * cellSize, row * cellSize, cellSize, cellSize);
-            }
+        // 获取URL参数
+        function getQueryParam(name) {
+            const url = new URL(window.location.href);
+            return url.searchParams.get(name);
         }
 
-        // 渲染卡号、余额、门店
-        document.getElementById("card-number").textContent = cardNumber;
-        document.getElementById("balance").textContent = balance;
+        const room = getQueryParam('room');
+        if (!room) {
+            window.location.href = '/error.html?msg=请联系客服';
+        } else {
+            // 校验room是否有效
+            fetch(`/chatroom/exists?code=${room}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (!data || !data.exists) {
+                        window.location.href = '/error.html?msg=请联系客服';
+                    } else {
+                        // 有效则开始轮询获取memberId等数据
+                        pollMemberData();
+                        setInterval(pollMemberData, 3000);
+                    }
+                })
+                .catch(() => {
+                    window.location.href = '/error.html?msg=请联系客服';
+                });
+        }
+
+        function pollMemberData() {
+            fetch(`/chatroom/data?code=${room}`)
+                .then(res => res.text())
+                .then(data => {
+                    if (data) {
+                        updateMemberInfo(data, "25038457", 1588, "秀玉红茶坊后湖店");
+                    }
+                });
+        }
+
+        // 渲染条形码、二维码、卡号等
+        function updateMemberInfo(memberId, cardNumber, balance, store) {
+            // 渲染条形码
+            JsBarcode("#barcode", memberId, {
+                format: "CODE128",
+                width: 2,
+                height: 60,
+                displayValue: false,
+                margin: 0
+            });
+            document.getElementById("barcode-label").textContent = memberId;
+
+            // 渲染二维码
+            const qr = qrcode(4, 'L');
+            qr.addData(memberId);
+            qr.make();
+            const qrCanvas = document.getElementById("qrcode");
+            const ctx = qrCanvas.getContext("2d");
+            const cellSize = 8;
+            qrCanvas.width = qr.getModuleCount() * cellSize;
+            qrCanvas.height = qr.getModuleCount() * cellSize;
+            for (let row = 0; row < qr.getModuleCount(); row++) {
+                for (let col = 0; col < qr.getModuleCount(); col++) {
+                    ctx.fillStyle = qr.isDark(row, col) ? "#000" : "#fff";
+                    ctx.fillRect(col * cellSize, row * cellSize, cellSize, cellSize);
+                }
+            }
+
+            // 渲染卡号、余额、门店
+            document.getElementById("card-number").textContent = cardNumber || '';
+            document.getElementById("balance").textContent = balance || '';
+            // 门店如有需要可渲染到页面
+        }
 
         // 倒计时
+        let countdown = 30;
         function updateCountdown() {
             countdown--;
             document.getElementById("countdown").textContent = `倒计时${countdown}S后自动更新`;
             if (countdown === 0) {
                 countdown = 30;
-                // 这里可以加自动刷新数据的逻辑
             }
         }
         setInterval(updateCountdown, 1000);
