@@ -2,177 +2,191 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
+    <title>会员支付码</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>二维码接收端</title>
+    <!-- 二维码库 -->
     <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+    <!-- 条形码库 -->
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            background: #5a6d44;
             margin: 0;
-            padding: 20px;
-            background-color: #f5f5f5;
+            font-family: "PingFang SC", Arial, sans-serif;
         }
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            background-color: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        .card-container {
+            background: #fff;
+            border-radius: 24px;
+            margin: 32px auto;
+            max-width: 400px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+            padding: 0 0 24px 0;
+            position: relative;
         }
-        #qrImage {
-            display: block;
-            margin: 20px auto;
-            max-width: 100%;
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 24px 24px 0 24px;
         }
-        #qrText {
-            margin: 20px 0;
-            padding: 10px;
-            background-color: #f8f9fa;
-            border-radius: 4px;
-            word-break: break-all;
+        .balance {
+            font-size: 20px;
+            color: #333;
         }
-        .status {
-            padding: 10px;
-            margin: 10px 0;
-            border-radius: 4px;
+        .balance strong {
+            color: #222;
+            font-size: 22px;
+        }
+        .recharge-btn {
+            background: #5a6d44;
+            color: #fff;
+            border: none;
+            border-radius: 20px;
+            padding: 8px 24px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .divider {
+            border: none;
+            border-top: 1px solid #eee;
+            margin: 16px 0;
+        }
+        .barcode-section {
             text-align: center;
+            margin: 8px 0 0 0;
         }
-        .connected {
-            background-color: #d4edda;
-            color: #155724;
+        .barcode-label {
+            font-size: 15px;
+            color: #444;
+            margin-top: 4px;
+            letter-spacing: 2px;
         }
-        .disconnected {
-            background-color: #f8d7da;
-            color: #721c24;
+        .qrcode-section {
+            text-align: center;
+            margin: 16px 0 0 0;
         }
-        .error {
-            background-color: #f8d7da;
-            color: #721c24;
-            padding: 10px;
-            margin: 10px 0;
-            border-radius: 4px;
+        .countdown {
+            text-align: center;
+            color: #888;
+            font-size: 14px;
+            margin: 8px 0 0 0;
+        }
+        .info-section {
+            margin: 16px 24px 0 24px;
+            font-size: 16px;
+            color: #333;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 4px 0;
+        }
+        .pay-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 24px auto 0 auto;
+            width: 90%;
+            background: #fff;
+            border: 2px solid #5a6d44;
+            color: #5a6d44;
+            border-radius: 32px;
+            font-size: 18px;
+            padding: 12px 0;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .pay-btn img {
+            width: 24px;
+            margin-right: 8px;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>二维码接收端</h1>
-        <div id="status" class="status">正在连接...</div>
-        <div id="qrText"></div>
-        <img id="qrImage" alt="二维码" />
+    <div class="card-container">
+        <div class="header">
+            <div class="balance">账户余额：<strong id="balance">1588元</strong></div>
+            <button class="recharge-btn">去充值</button>
+        </div>
+        <hr class="divider">
+        <div class="barcode-section">
+            <svg id="barcode"></svg>
+            <div class="barcode-label" id="barcode-label">86900001024825037433</div>
+        </div>
+        <div class="qrcode-section">
+            <canvas id="qrcode"></canvas>
+        </div>
+        <div class="countdown" id="countdown">倒计时30S后自动更新</div>
+        <hr class="divider">
+        <div class="info-section">
+            <div class="info-row">
+                <span>卡号</span>
+                <span id="card-number">25038457</span>
+            </div>
+            <div class="info-row">
+                <span>卡型有效期</span>
+                <span>永久有效</span>
+            </div>
+            <div class="info-row">
+                <span>售卡门店</span>
+                <span>秀玉红茶坊后湖店</span>
+            </div>
+        </div>
+        <button class="pay-btn">
+            <img src="https://img.icons8.com/color/48/000000/weixing.png" alt="微信支付"/>
+            使用微信支付
+        </button>
     </div>
-
     <script>
-        class QRReceiver {
-            constructor() {
-                this.room = new URLSearchParams(window.location.search).get("room");
-                this.qrImage = document.getElementById('qrImage');
-                this.qrText = document.getElementById('qrText');
-                this.statusElement = document.getElementById('status');
-                this.pollingInterval = 1000; // 轮询间隔（毫秒）
-                this.lastData = null;
-                this.init();
-            }
+        // 示例数据
+        const memberId = "86900001024825037433";
+        const barcodeValue = memberId;
+        const qrValue = memberId; // 你可以换成其他内容
+        const cardNumber = "25038457";
+        const balance = "3元";
+        const store = "秀玉红茶坊后湖店";
+        let countdown = 30;
 
-            showError(message) {
-                const errorDiv = document.createElement('div');
-                errorDiv.className = 'error';
-                errorDiv.textContent = message;
-                document.body.insertBefore(errorDiv, document.body.firstChild);
-                console.error(message);
-            }
+        // 渲染条形码
+        JsBarcode("#barcode", barcodeValue, {
+            format: "CODE128",
+            width: 2,
+            height: 60,
+            displayValue: false,
+            margin: 0
+        });
+        document.getElementById("barcode-label").textContent = barcodeValue;
 
-            init() {
-                if (!this.room) {
-                    this.showError('错误: 缺少房间号参数，请使用?room=房间号访问');
-                    return;
-                }
-
-                this.checkRoomExists();
-            }
-
-            async checkRoomExists() {
-                try {
-                    const response = await fetch(`/chatroom/exists?code=${this.room}`);
-                    const data = await response.json();
-                    
-                    if (data.exists) {
-                        this.updateStatus('已连接到聊天室', true);
-                        this.startPolling();
-                    } else {
-                        this.updateStatus('聊天室不存在', false);
-                    }
-                } catch (error) {
-                    this.updateStatus('连接失败', false);
-                    console.error('检查聊天室失败:', error);
-                }
-            }
-
-            startPolling() {
-                this.pollData();
-                setInterval(() => this.pollData(), this.pollingInterval);
-            }
-
-            async pollData() {
-                try {
-                    const response = await fetch(`/chatroom/data?code=${this.room}`);
-                    const data = await response.text();
-                    
-                    if (data !== this.lastData) {
-                        this.lastData = data;
-                        if (data) {
-                            this.handleData(data);
-                        }
-                    }
-                } catch (error) {
-                    console.error('获取数据失败:', error);
-                }
-            }
-
-            handleData(data) {
-                console.log('收到数据:', data);
-                this.qrText.textContent = data;
-                
-                // 生成二维码
-                try {
-                    // 根据数据长度计算合适的类型号
-                    const typeNumber = this.calculateTypeNumber(data);
-                    const qr = qrcode(typeNumber, 'L');
-                    qr.addData(data);
-                    qr.make();
-                    this.qrImage.src = qr.createDataURL(4);
-                } catch (error) {
-                    console.error('生成二维码失败:', error);
-                    this.showError('生成二维码失败: ' + error.message);
-                }
-            }
-
-            calculateTypeNumber(data) {
-                const length = data.length;
-                if (length <= 25) return 1;
-                if (length <= 47) return 2;
-                if (length <= 77) return 3;
-                if (length <= 114) return 4;
-                if (length <= 154) return 5;
-                if (length <= 195) return 6;
-                if (length <= 224) return 7;
-                if (length <= 279) return 8;
-                if (length <= 335) return 9;
-                if (length <= 395) return 10;
-                return 40; // 最大类型号
-            }
-
-            updateStatus(message, connected = false) {
-                this.statusElement.textContent = message;
-                this.statusElement.className = `status ${connected ? 'connected' : 'disconnected'}`;
+        // 渲染二维码
+        const qr = qrcode(4, 'L');
+        qr.addData(qrValue);
+        qr.make();
+        const qrCanvas = document.getElementById("qrcode");
+        const ctx = qrCanvas.getContext("2d");
+        const cellSize = 8;
+        qrCanvas.width = qr.getModuleCount() * cellSize;
+        qrCanvas.height = qr.getModuleCount() * cellSize;
+        for (let row = 0; row < qr.getModuleCount(); row++) {
+            for (let col = 0; col < qr.getModuleCount(); col++) {
+                ctx.fillStyle = qr.isDark(row, col) ? "#000" : "#fff";
+                ctx.fillRect(col * cellSize, row * cellSize, cellSize, cellSize);
             }
         }
 
-        // 页面加载完成后初始化
-        document.addEventListener('DOMContentLoaded', () => {
-            new QRReceiver();
-        });
+        // 渲染卡号、余额、门店
+        document.getElementById("card-number").textContent = cardNumber;
+        document.getElementById("balance").textContent = balance;
+
+        // 倒计时
+        function updateCountdown() {
+            countdown--;
+            document.getElementById("countdown").textContent = `倒计时${countdown}S后自动更新`;
+            if (countdown === 0) {
+                countdown = 30;
+                // 这里可以加自动刷新数据的逻辑
+            }
+        }
+        setInterval(updateCountdown, 1000);
     </script>
 </body>
 </html>
